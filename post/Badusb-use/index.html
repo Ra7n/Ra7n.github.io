@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    
+<meta charset="utf-8" >
+
+<title>记一次BadUsb烧录过程 | Ra7n&#39;s Blog</title>
+<meta name="description" content="为国之安全奋斗 为信息安全发声">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.0/animate.min.css">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://Ra7n.github.io/favicon.ico?v=1670661199989">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://Ra7n.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+      <div class="site-header-container">
+  <div class="site-header">
+    <div class="left">
+      <a href="https://Ra7n.github.io">
+        <img class="avatar" src="https://Ra7n.github.io/images/avatar.png?v=1670661199989" alt="" width="32px" height="32px">
+      </a>
+      <a href="https://Ra7n.github.io">
+        <h1 class="site-title">Ra7n&#39;s Blog</h1>
+      </a>
+    </div>
+    <div class="right">
+      <transition name="fade">
+        <i class="icon" :class="{ 'icon-close-outline': menuVisible, 'icon-menu-outline': !menuVisible }" @click="menuVisible = !menuVisible"></i>
+      </transition>
+    </div>
+  </div>
+</div>
+
+<transition name="fade">
+  <div class="menu-container" style="display: none;" v-show="menuVisible">
+    <div class="menu-list">
+      
+        
+          <a href="/" class="menu purple-link">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="menu purple-link">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="menu purple-link">
+            标签
+          </a>
+        
+      
+        
+          <a href="https://ra7n.github.io/post/about" class="menu purple-link">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+</transition>
+
+
+      <div class="content-container">
+        <div class="post-detail">
+          
+            <div class="feature-container" style="background-image: url('https://Ra7n.github.io/post-images/Badusb-use.jpg')">
+            </div>
+          
+          <h2 class="post-title">记一次BadUsb烧录过程</h2>
+          <div class="post-info post-detail-info">
+            <span><i class="icon-calendar-outline"></i> 2022-12-05</span>
+            
+              <span>
+                <i class="icon-pricetags-outline"></i>
+                
+                  <a href="https://Ra7n.github.io/tag/ojBS9iq17/">
+                    近源
+                    
+                      ，
+                    
+                  </a>
+                
+                  <a href="https://Ra7n.github.io/tag/BmdM8uGCsM/">
+                    硬件
+                    
+                  </a>
+                
+              </span>
+            
+          </div>
+          <div class="post-content" v-pre>
+            <p>​	某宝10元买的BadUsb到了,简单的来使用一下,特地记录一下环境搭建与烧录的过程</p>
+<pre><code class="language-yaml">Arduino IDE Version: 1.6.5
+设备: Digispark
+</code></pre>
+<p>​	至于什么是Badusb,就不在这里展开赘述了;网上一堆看不懂的资料,按照我的理解BadUsb就是一个用于模拟键盘输入的设备。你能用键盘做什么,它就能做什么。</p>
+<h3 id="环境搭建">环境搭建:</h3>
+<h4 id="0x01-下载arduino-ide">0x01-下载Arduino IDE:</h4>
+<p>​	下载地址:https://downloads.arduino.cc/arduino-1.6.5-r5-windows.exe</p>
+<p>​	下载完成后无脑下一步就行了</p>
+<h4 id="0x02-配置arduino-ide">0x02-配置Arduino IDE:</h4>
+<p>​	点击IDE上方&quot;文件&quot;---&gt;&quot;首选项&quot;按钮,将Additional Boards Manager URLs改为，这里是导入Arduino IDE下载附加开发板的json配置文件。</p>
+<pre><code>https://raw.githubusercontent.com/digistump/arduino-boards-index/master/package_digistump_index.json
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://Ra7n.github.io/post-images/1670171247519.png" alt="" loading="lazy"></figure>
+<h4 id="0x03-下载digispark附加开发板模块">0x03-下载digispark附加开发板模块</h4>
+<p>​	在进行这一步之前要开一下代理,否则会下载失败,这是一个坑。开启代理后点击IDE上方&quot;工具&quot;-----&gt;&quot;Boards Manager&quot;按钮。搜索关键字下载即可。</p>
+<figure data-type="image" tabindex="2"><img src="https://Ra7n.github.io/post-images/1670171253546.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="3"><img src="https://Ra7n.github.io/post-images/1670171257802.png" alt="" loading="lazy"></figure>
+<h4 id="0x04-勾选digisparkdefault-165mhz选项">0x04-勾选Digispark(Default-16.5mhz)选项</h4>
+<figure data-type="image" tabindex="4"><img src="https://Ra7n.github.io/post-images/1670171264376.png" alt="" loading="lazy"></figure>
+<p>这样IDE环境就配置好了,就可以开始烧录了</p>
+<h3 id="开始烧录">开始烧录:</h3>
+<h4 id="0x01-下载automator">0x01-下载Automator</h4>
+<p>​	github下载开源项目Automator</p>
+<p>​	地址:https://github.com/Catboy96/Automator/releases</p>
+<p>​	下载最下方中文版的,这个软件的作用是帮助构建烧录的代码</p>
+<h4 id="0x02-生成代码点击生成保存到桌面">0x02-生成代码(点击生成保存到桌面)</h4>
+<figure data-type="image" tabindex="5"><img src="https://Ra7n.github.io/post-images/1670171270116.png" alt="" loading="lazy"></figure>
+<p>0x03-将桌面文件内容复制到IDE中</p>
+<figure data-type="image" tabindex="6"><img src="https://Ra7n.github.io/post-images/1670171275341.png" alt="" loading="lazy"></figure>
+<p>显示60秒提示则插入usb,显示thank you表示烧录成功,这里的动作是win+R在输入chrome rain.github.io,访问博客首页</p>
+<figure data-type="image" tabindex="7"><img src="https://Ra7n.github.io/post-images/1670171281386.png" alt="" loading="lazy"></figure>
+<h3 id="效果演示">效果演示:</h3>
+<figure data-type="image" tabindex="8"><img src="https://Ra7n.github.io/post-images/1670171286178.png" alt="" loading="lazy"></figure>
+
+          </div>
+        </div>
+
+        
+          <div class="next-post">
+            <a class="purple-link" href="https://Ra7n.github.io/post/hui-bian-ji-chu/">
+              <h3 class="post-title">
+                下一篇：汇编基础(学习笔记)
+              </h3>
+            </a>
+          </div>
+          
+      </div>
+
+      
+
+      <div class="site-footer">
+  <div class="slogan">为国之安全奋斗 为信息安全发声</div>
+  <div class="social-container">
+    
+      
+        <a href="https://github.com/Ra7n" target="_blank">
+          <i class="fab fa-github"></i>
+        </a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+  <b>文章仅供学习参考,严禁用于非法测试!!!,产生一切后果自行承担<b/>
+<br/>
+Copyrights © 2022 | Ra7n
+<br/>
+Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://Ra7n.github.io/atom.xml" target="_blank">RSS</a>
+</div>
+
+
+    </div>
+    <script type="application/javascript">
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

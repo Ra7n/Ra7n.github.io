@@ -1,0 +1,231 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    
+<meta charset="utf-8" >
+
+<title>Searchsploit(Exploit-db漏洞库检索-工具分享) | Ra7n&#39;s Blog</title>
+<meta name="description" content="为国之安全奋斗 为信息安全发声">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.0/animate.min.css">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://Ra7n.github.io/favicon.ico?v=1670661199989">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://Ra7n.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+      <div class="site-header-container">
+  <div class="site-header">
+    <div class="left">
+      <a href="https://Ra7n.github.io">
+        <img class="avatar" src="https://Ra7n.github.io/images/avatar.png?v=1670661199989" alt="" width="32px" height="32px">
+      </a>
+      <a href="https://Ra7n.github.io">
+        <h1 class="site-title">Ra7n&#39;s Blog</h1>
+      </a>
+    </div>
+    <div class="right">
+      <transition name="fade">
+        <i class="icon" :class="{ 'icon-close-outline': menuVisible, 'icon-menu-outline': !menuVisible }" @click="menuVisible = !menuVisible"></i>
+      </transition>
+    </div>
+  </div>
+</div>
+
+<transition name="fade">
+  <div class="menu-container" style="display: none;" v-show="menuVisible">
+    <div class="menu-list">
+      
+        
+          <a href="/" class="menu purple-link">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="menu purple-link">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="menu purple-link">
+            标签
+          </a>
+        
+      
+        
+          <a href="https://ra7n.github.io/post/about" class="menu purple-link">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+</transition>
+
+
+      <div class="content-container">
+        <div class="post-detail">
+          
+            <div class="feature-container" style="background-image: url('https://Ra7n.github.io/post-images/Searchsploit-use.png')">
+            </div>
+          
+          <h2 class="post-title">Searchsploit(Exploit-db漏洞库检索-工具分享)</h2>
+          <div class="post-info post-detail-info">
+            <span><i class="icon-calendar-outline"></i> 2022-12-05</span>
+            
+          </div>
+          <div class="post-content" v-pre>
+            <h3 id="前言">前言:</h3>
+<p>​	在讲Searchsploit之前先说一下Exploit-Database,Exploit-Database(简称Exploit-db)是Kali官方进行维护的一个漏洞库项目,存储了各种类型的漏洞利用程序、漏洞报告、安全文章、相关技术教程等信息。该项目不定时进行更新。</p>
+<p>​	而Searchsploit是kali系统自带的一款用于离线搜索Exploit-db的命令行工具,在卡里本地附带了Exploit-db的副本,Searchsploit用于使用一些特定的指令对Exploit-db数据库进行检索,离线搜索在不联网的渗透环境下还有很有用的。去年在学习Linux系统提权时使用过这款工具,今天再来详细的学习一下这款工具的具体使用流程。</p>
+<p>​	在线使用该项目请访问:https://www.exploit-db.com/</p>
+<h3 id="安装">安装:</h3>
+<pre><code class="language-yaml">windows: 该工具暂无windows版本
+Linux: 
+  Kali: 默认自带
+  Other: 需要自行安装
+</code></pre>
+<h4 id="ubantu系统">Ubantu系统:</h4>
+<pre><code class="language-SHELL">sudo git clone https://github.com/offensive-security/exploitdb.git /opt/exploitdb
+sudo ln -sf /opt/exploitdb/searchsploit /usr/local/bin/searchsploit
+searchsploit -h
+searchsploit -u
+</code></pre>
+<h3 id="使用">使用:</h3>
+<h4 id="0x01-获取帮助">0x01-获取帮助</h4>
+<p><strong>在kali命令行窗口输入searchsploit可获取使用帮助</strong></p>
+<pre><code class="language-shell">searchsploit -h &amp; -help # 获取使用帮助
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://Ra7n.github.io/post-images/1670211871018.png" alt="" loading="lazy"></figure>
+<h4 id="0x02-更新searchsploit">0x02-更新Searchsploit</h4>
+<p>​	请定期进行更新</p>
+<pre><code class="language-shell">searchsploit -u
+# 如果是旧版本的Kali还需要执行
+sudo apt update &amp;&amp; sudo apt -y full-upgrade # 更新软件包
+</code></pre>
+<figure data-type="image" tabindex="2"><img src="https://Ra7n.github.io/post-images/1670211876196.png" alt="" loading="lazy"></figure>
+<h4 id="0x03-具体使用参数">0x03-具体使用参数:</h4>
+<pre><code class="language-yaml">用法: searchsploit [options] 参数1 参数2 参数3....
+
+
+适用范例:
+	searchsploit afd windows local
+  	searchsploit -t oracle windows
+  	searchsploit -p 39446
+  	searchsploit linux kernel 3.2 --exclude=&quot;(PoC)|/dos/&quot;
+  	searchsploit -s Apache Struts 2.0.0
+  	searchsploit linux reverse password
+  	searchsploit -j 55555 | jq
+  	searchsploit --cve 2021-44228
+
+
+指定搜索条件:
+       -c, --case    [参数]     # 执行区分大小写的搜索(默认情况下是对大小写不敏感的)
+       -e, --exact   [参数]     # 切换ORDER匹配模式(默认情况下为AND模式),例:&quot;wordpress or 4.1&quot;使用or连接搜索关键字 &quot; 所以这种模式下搜索结果比较模糊
+       -s, --strict  [参数]     # 执行严格搜索，因此输入值必须存在，禁用版本范围的模糊搜索(如&quot;1.0&lt;1.3&quot;中不会检测到&quot;1.1&quot;,需指定明确的版本信息）
+       -t, --title    [参数]    # 只搜索利用标题(默认情况下是检索标题和文件的路径)
+       --exclude=&quot;参数&quot;         #排除部分搜索结果,可连接多个值,使用&quot;|&quot;对关键字进行分隔(例如:--exclude=&quot;term1|term2|term3&quot;)
+       --cve          [参数(cve编号)]  # 搜索常见漏洞/指定cve编号进行搜索
+       
+ 输出选项:
+ 	   -j, --json     [参数]       # 显示JSON格式的结果
+   	   -o, --overflow [参数]       # 允许利用标题溢出其列
+   	   -p, --path     [EDB-ID]     # 指定EDB-ID值,显示攻击的完整路径
+       -v, --verbose               # 在输出中显示更多信息
+       -w, --www      [参数]       # 显示到Exploit-DB.com在线库中的URL路径，而不是本地路径
+       --id                   	   # 显示EDB-ID值，而不是本地路径
+       --disable-colour            # 禁用搜索结果中的颜色高亮显示
+      
+      
+ 其它:
+ 	-m, --mirror   [EDB-ID]        # 将利用漏洞镜像(或复制)到当前工作目录
+ 	-x, --examine  [EDB-ID] 	   # 使用$PAGER检查(即打开)漏洞
+    -h, --help                      # 显示此帮助界面
+    -u, --update                    # 检查并安装任何exploitdb包更新(brew, deb和git)
+    --nmap  [file.xml]              # 使用服务版本检查Nmap的XML输出中的所有结果(例如:Nmap [host] -sV -oX file.xml)
+</code></pre>
+<h3 id="简单使用">简单使用:</h3>
+<pre><code class="language-shell">searchsploit -s windows smb # 严格模式搜索
+</code></pre>
+<figure data-type="image" tabindex="3"><img src="https://Ra7n.github.io/post-images/1670211882663.png" alt="" loading="lazy"></figure>
+<pre><code class="language-shell"># 显示www.exploit-db.com在线库该漏洞访问路径
+searchsploit -s windows smb -w
+</code></pre>
+<figure data-type="image" tabindex="4"><img src="https://Ra7n.github.io/post-images/1670211888913.png" alt="" loading="lazy"></figure>
+
+          </div>
+        </div>
+
+        
+          <div class="next-post">
+            <a class="purple-link" href="https://Ra7n.github.io/post/Badusb-use/">
+              <h3 class="post-title">
+                下一篇：记一次BadUsb烧录过程
+              </h3>
+            </a>
+          </div>
+          
+      </div>
+
+      
+
+      <div class="site-footer">
+  <div class="slogan">为国之安全奋斗 为信息安全发声</div>
+  <div class="social-container">
+    
+      
+        <a href="https://github.com/Ra7n" target="_blank">
+          <i class="fab fa-github"></i>
+        </a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+  <b>文章仅供学习参考,严禁用于非法测试!!!,产生一切后果自行承担<b/>
+<br/>
+Copyrights © 2022 | Ra7n
+<br/>
+Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://Ra7n.github.io/atom.xml" target="_blank">RSS</a>
+</div>
+
+
+    </div>
+    <script type="application/javascript">
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

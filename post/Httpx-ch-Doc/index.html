@@ -1,0 +1,347 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    
+<meta charset="utf-8" >
+
+<title>Httpx基本使用(主机探测-工具分享-中文手册) | Ra7n&#39;s Blog</title>
+<meta name="description" content="为国之安全奋斗 为信息安全发声">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.0/animate.min.css">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://Ra7n.github.io/favicon.ico?v=1670661199989">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://Ra7n.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+      <div class="site-header-container">
+  <div class="site-header">
+    <div class="left">
+      <a href="https://Ra7n.github.io">
+        <img class="avatar" src="https://Ra7n.github.io/images/avatar.png?v=1670661199989" alt="" width="32px" height="32px">
+      </a>
+      <a href="https://Ra7n.github.io">
+        <h1 class="site-title">Ra7n&#39;s Blog</h1>
+      </a>
+    </div>
+    <div class="right">
+      <transition name="fade">
+        <i class="icon" :class="{ 'icon-close-outline': menuVisible, 'icon-menu-outline': !menuVisible }" @click="menuVisible = !menuVisible"></i>
+      </transition>
+    </div>
+  </div>
+</div>
+
+<transition name="fade">
+  <div class="menu-container" style="display: none;" v-show="menuVisible">
+    <div class="menu-list">
+      
+        
+          <a href="/" class="menu purple-link">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="menu purple-link">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="menu purple-link">
+            标签
+          </a>
+        
+      
+        
+          <a href="https://ra7n.github.io/post/about" class="menu purple-link">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+</transition>
+
+
+      <div class="content-container">
+        <div class="post-detail">
+          
+            <div class="feature-container" style="background-image: url('https://Ra7n.github.io/post-images/Httpx-ch-Doc.png')">
+            </div>
+          
+          <h2 class="post-title">Httpx基本使用(主机探测-工具分享-中文手册)</h2>
+          <div class="post-info post-detail-info">
+            <span><i class="icon-calendar-outline"></i> 2022-12-01</span>
+            
+              <span>
+                <i class="icon-pricetags-outline"></i>
+                
+                  <a href="https://Ra7n.github.io/tag/ErDcCWUJN/">
+                    主机探测
+                    
+                      ，
+                    
+                  </a>
+                
+                  <a href="https://Ra7n.github.io/tag/saWWF0sM8/">
+                    Github优秀项目
+                    
+                      ，
+                    
+                  </a>
+                
+                  <a href="https://Ra7n.github.io/tag/HqMlVNHniz/">
+                    渗透测试
+                    
+                  </a>
+                
+              </span>
+            
+          </div>
+          <div class="post-content" v-pre>
+            <pre><code>    __  ____  __            
+   / / / / /_/ /_____  _  __
+  / /_/ / __/ __/ __ \| |/_/
+ / __  / /_/ /_/ /_/ /&gt;  &lt;  
+/_/ /_/\__/\__/ .___/_/|_|  
+             /_/
+</code></pre>
+<ul>
+<li>项目地址:https://github.com/projectdiscovery/httpx</li>
+<li>作者:ProjectDiscovery</li>
+<li>用途:基于http协议的主机探测分析工具</li>
+<li>开发语言:Go</li>
+</ul>
+<h3 id="支持的探测信息">支持的探测信息:</h3>
+<figure data-type="image" tabindex="1"><img src="https://Ra7n.github.io/post-images/1669898089191.png" alt="" loading="lazy"></figure>
+<h3 id="使用">使用:</h3>
+<h4 id="获取帮助信息">获取帮助信息:</h4>
+<pre><code class="language-shell">./Httpx -h # 输出参数说明
+</code></pre>
+<h4 id="参数说明">参数说明:</h4>
+<pre><code class="language-shell">Usage:
+  ./httpx + [flags]
+  
+Flags:
+	对响应内容的操作:
+		Input(输入):
+    		-l &amp; -list (string)      # 指定需要探测的主体(指定存储探测主机的文件,例如host.txt)
+    		-rr &amp; -request (string)  # 指定包含原始请求的文件
+    		-u &amp; -target (string[])  # 直接指定域名/主机名/IP地址进行探测
+    	
+    	PROBES(探测内容):
+    		-sc &amp; -status-code     # 显示响应状态码
+   			-cl &amp; -content-length  # 显示响应内容长度
+   			-ct &amp; -content-type    # 显示响应内容类型
+   			-location              # 显示响应重定向位置
+   			-favicon               # 显示favoic.ioc文件的hash值
+   			-hash (string)         # 显示响应体哈希(支持:md5, mmh3, simhash, sha1, sha256, sha512)
+   			-jarm                  # 显示有害指纹散列
+   			-rt &amp; -response-time   # 显示响应时间
+   			-lc &amp; -line-count      # 显示响应体行数
+   			-wc &amp; -word-count      # 显示响应体字数
+   			-title                 # 显示页面标题
+   			-server &amp; -web-server  # 显示服务器名称
+   			-td &amp; -tech-detect     # 基于wappalyzer数据集分析站点使用的技术
+   			-method                # 显示HTTP请求方法
+   			-websocket             # 使用websocket显示服务器
+   			-ip                    # 显示主机IP
+   			-cname                 # 显示主机CNAME
+   			-asn                   # 显示主机asn信息
+   			-cdn                   # 显示使用的CDN信息
+   			-probe                 # 显示探针状态(探测成功与否)
+    
+		MATCHERS(匹配器):
+			-mc &amp; -match-code (string)           # 根据指定的状态码匹配响应内容(-mc 200, 302)
+   			-ml &amp; -match-length (string)         # 根据指定的内容长度匹配响应内容(-ml 100,102)
+   			-mlc &amp; -match-line-count (string)    # 根据指定的行数匹配响应内容(-mlc 423,532)
+   			-mwc &amp; -match-word-count (string)    # 将响应正文内容与指定的字数匹配(-mwc 43,55)
+   			-mfc &amp; -match-favicon (string[])     # 用指定的图标哈希匹配响应(-mfc 1494302000)
+   			-ms &amp; -match-string (string)         # 根据指定的字符串匹配响应内容(-ms admin)
+   			-mr &amp; -match-regex (string)          # 根据正则表达式匹配响应内容
+   			-mcdn &amp; -match-cdn (string[])        # 匹配主机与指定的CDN提供商(支持的厂商fastly, incapsula, oracle, google, azure, cloudflare, cloudfront, sucuri, leaseweb, akamai) 大都是国外的
+   			-mrt &amp; -match-response-time (string) # 根据指定的时间对内容响应的时间进行比较匹配,以秒为单位
+   			-mdc &amp; -match-condition (string)     # 用DSL表达式条件匹配响应
+   	
+   		EXTRACTOR(提取器):
+   			-er &amp; -extract-regex (string[])   	 # 使用正则表达式匹配响应内容提取并返回
+   			-ep &amp; -extract-preset (string[])  	 # 显示预定义正则表达式匹配的响应内容(url, ipv4，邮件)
+   		
+   		FILTERS(过滤器):
+   			-fc &amp; -filter-code (string)            # 使用指定的状态代码筛选响应(-fc 403,401)
+   			-fl &amp; -filter-length (string)          # 使用指定的内容长度筛选响应(-fl 23,33)
+   			-flc &amp; -filter-line-count (string)     # 使用指定的行数筛选响应(-flc 423,532)
+   			-fwc &amp; -filter-word-count (string)     # 使用指定的字数筛选响应(-fwc 423,532)
+   			-ffc &amp; -filter-favicon (string)        # 使用指定的favicon图标图片散列(hash)筛选响应(-mfc 1494302000)
+   			-fs &amp; -filter-string (string)          # 使用指定的字符串过滤响应
+   			-fe &amp; -filter-regex (string)           # 使用指定的正则表达式筛选响应(-fe admin)
+   			-fcdn &amp; -filter-cdn (string[])         # 使用指定的CDN厂商对响应进行筛选 (fastly, incapsula, oracle, google, azure, cloudflare, cloudfront, sucuri, leaseweb, akamai)
+   			-frt &amp; -filter-response-time (string)  # 指定响应具体的响应时间进行筛选
+   			-fdc &amp; -filter-condition (string)      # 用DSL表达式条件筛选响应
+   	
+   	对Httpx工具的操作/对请求的定制:
+   		RATE-LIMIT(限速/对并发量的限制):
+   	   		-t &amp; -threads (int)                # 使用的线程数(默认为50)
+   	   		-rl &amp; -rate-limit (int)            # 每秒发送的最大请求数(默认为150)
+   	   		-rlm &amp; -rate-limit-minute (int)    # 每分钟发送的最大请求数
+   	   		
+   	   	MISCELLANEOUS(杂项/其它):
+   	   	    -pa &amp; -probe-all-ips        # 探测与同一主机相关联的所有ip
+   	   	    -p &amp; -ports (string[])      # 探测指定的端口(nmap语法:例如http: 1,2 - 10,11, https:80)
+   	   	    -path (string)              # 探测的路径或路径列表(逗号分隔，文件)
+   	   	    -tls-probe                  # 在提取的TLS域上发送http探测(dns_name)
+   	   	    -csp-probe                  # 在提取的CSP域上发送http探测
+   	   	    -tls-grab                   # 执行TLS(SSL)数据抓取
+   	   	    -pipeline                   # 探测和显示服务器支持HTTP1.1管道
+   	   	    -http2                      # 探测和显示服务器支持HTTP2
+   	   	    -vhost                      # 探测和显示服务器支持VHOST
+   	   	    -ldv &amp; -list-dsl-variables  # 列出支持DSL匹配器/过滤器的json输出字段键名
+   	   	   
+   	   	OUTPUT(输出):
+   	   	    -o &amp; -output (string)             # 指定文件执行输出结果
+   	   	    -sr &amp; -store-response             # 将HTTP响应存储到输出目录
+   	   	    -srd &amp; -store-response-dir (string)  # 将HTTP响应存储到自定义目录
+   	   	    -csv                              # 保存CSV格式的输出信息
+   	   	    -json                             # 以JSONL (ines)格式存储输出
+   	   	    -irr &amp; -include-response          # 在JSON输出中包含http请求/响应(仅-json)
+   	   	    -include-chain                    # 在JSON输出中包含重定向http链(仅-json)
+   	   	    -store-chain                      # 在响应中包含HTTP重定向链(仅-sr)
+   	   	   
+   	   	CONFIGURATIONS(配置):
+   	   	    -r &amp; -resolvers (string[])        # 自定义解析器列表(文件或逗号分隔)
+   	   	    -allow (string[])                 # 允许处理的IP/CIDR列表(文件或逗号分隔)
+   	   	    -deny (string[])                  # 拒绝处理IP/CIDR列表(文件或逗号分隔)
+   	   	    -sni &amp; -sni-name (string)         # 自定义TLS SNI名称
+   	   	    -random-agent                     # 启用随机用户代理使用(默认为true)
+   	   	    -H &amp; -header (string[])           # 自定义与请求一起发送的HTTP报头
+   	   	    -http-proxy &amp; -proxy (string)     # 要使用的HTTP代理(例如http://127.0.0.1:8080)
+   	   	    -unsafe                           # 发送原始请求跳过golang规范化
+   	   	    -resume                           # 使用Resume .cfg扫描简历
+   	   	    -fr &amp; -follow-redirects           # 遵循HTTP重定向
+   	   	    -maxr &amp; -max-redirects (int)      # 每个主机的最大重定向数量(默认为10)
+   	   	    -fhr &amp; -follow-host-redirects     # 跟踪同一主机上的重定向
+   	   	    -vhost-input                      # 获取一个vhost列表作为输入
+   	   	    -x (string)                       # 请求方法探测，使用'all'来探测所有HTTP方法
+            -body (string)                    # 指定POST请求正文部分
+   	   	    -s &amp; -stream                      # 流模式-开始细化输入目标而不排序
+   	   	    -sd &amp; -skip-dedupe                # 禁用重复数据删除输入项(仅用于流模式)
+   	   	    -ldp &amp; -leave-default-ports       #在主机头中保留默认的http/https端口。http://host:80 (eg. http://host:80 - https//host:443)
+   	   	   
+   	   	DEBUG(调试):
+   	   	   -health-check &amp; -hc       # 运行诊断检查
+   	   	   -debug                    # 在cli中显示请求/响应内容
+   	   	   -debug-req                # 在cli中显示请求内容
+   	   	   -debug-resp               # 在cli中显示响应内容
+   	   	   -version                  # 显示HTTPX版本
+   	   	   -stats                    # 显示扫描统计信息
+   	   	   -profile-mem (string)     # 可选的HTTPX内存配置文件转储文件
+   	   	   -silent                   # 静默模式
+   	   	   -v &amp; -verbose             # 详细模式
+   	   	   -si &amp; -stats-interval (int)  # 显示统计数据更新之间等待的秒数(默认值:5)
+   	   	   -nc &amp; -no-color              # 禁用cli输出中的颜色
+   	   	   
+   	   	OPTIMIZATIONS(优化):
+   	   	   -nf &amp; -no-fallback                  # 显示探测的协议(HTTPS和HTTP)
+           -nfs &amp; -no-fallback-scheme          # 在输入中指定协议方案的探测
+           -maxhr &amp; -max-host-error (int)      # 每台主机在跳过剩余路径前的最大错误数/秒(默认30秒)
+           -ec &amp; -exclude-cdn                  # 跳过CDNS的全端口扫描(只检查80,443)
+           -retries (int)                      # 重试次数
+           -timeout (int)                      # 超时时间(以秒为单位)(默认为5)
+           -rsts &amp; -response-size-to-save (int) # 以字节为单位保存的最大响应大小(默认为2147483647)
+           -rstr &amp; -response-size-to-read (int) # 以字节为单位读取的最大响应大小(默认2147483647)
+   
+</code></pre>
+<p>使用范例:</p>
+<pre><code class="language-shell">./httpx -l site.txt -title -sc -probe -ip # -l[指定目标集合文件] -title[输出站点标题]  -sc[输出状态码] -probe[输出探测成功与否] -ip[输出IP信息]
+</code></pre>
+<h3 id="使用细节">使用细节:</h3>
+<ul>
+<li>默认情况下，httpx只在HTTPS不可达时检查HTTPS探测并回退到HTTP</li>
+<li>对于打印HTTP/HTTPS结果，可以使用no-fallback标志</li>
+<li>可以定义端口的自定义方案，例如-ports http:443, http:80, https:8443</li>
+<li>Favicon、vhost、http2、pipeline、ports、csp-probe、tls-probe和path是具有不同探针的唯一标志</li>
+<li>对于特定的用例应该使用唯一的标志，而不是在其他探测中默认运行它们</li>
+<li>当使用json标志时，所有信息(默认探测)都包含在json输出中</li>
+<li>自定义解析器支持多种协议(dohltcpludp)的协议:解析器:端口的形式(如udp:127.0.0.1:53)</li>
+<li>无效的自定义解析器/文件将被忽略</li>
+</ul>
+<h3 id="结语">结语:</h3>
+<p><strong>很有用的一款工具!!!</strong><br/><br>
+<strong>做完信息收集以后可以对收集到的站点进行一波筛选,提升工作效率! 大家多多支持工具的作者喔!!</strong><br/></p>
+
+          </div>
+        </div>
+
+        
+          <div class="next-post">
+            <a class="purple-link" href="https://Ra7n.github.io/post/vegeta-shellcodeloder/">
+              <h3 class="post-title">
+                下一篇：Vegeta-[ShellcodeLoader]-自研
+              </h3>
+            </a>
+          </div>
+          
+      </div>
+
+      
+
+      <div class="site-footer">
+  <div class="slogan">为国之安全奋斗 为信息安全发声</div>
+  <div class="social-container">
+    
+      
+        <a href="https://github.com/Ra7n" target="_blank">
+          <i class="fab fa-github"></i>
+        </a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+  <b>文章仅供学习参考,严禁用于非法测试!!!,产生一切后果自行承担<b/>
+<br/>
+Copyrights © 2022 | Ra7n
+<br/>
+Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://Ra7n.github.io/atom.xml" target="_blank">RSS</a>
+</div>
+
+
+    </div>
+    <script type="application/javascript">
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

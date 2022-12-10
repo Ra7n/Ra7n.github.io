@@ -1,0 +1,246 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    
+<meta charset="utf-8" >
+
+<title>Crack基本使用(高效弱口令爆破-工具分享) | Ra7n&#39;s Blog</title>
+<meta name="description" content="为国之安全奋斗 为信息安全发声">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.0/animate.min.css">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://Ra7n.github.io/favicon.ico?v=1670661199989">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://Ra7n.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+      <div class="site-header-container">
+  <div class="site-header">
+    <div class="left">
+      <a href="https://Ra7n.github.io">
+        <img class="avatar" src="https://Ra7n.github.io/images/avatar.png?v=1670661199989" alt="" width="32px" height="32px">
+      </a>
+      <a href="https://Ra7n.github.io">
+        <h1 class="site-title">Ra7n&#39;s Blog</h1>
+      </a>
+    </div>
+    <div class="right">
+      <transition name="fade">
+        <i class="icon" :class="{ 'icon-close-outline': menuVisible, 'icon-menu-outline': !menuVisible }" @click="menuVisible = !menuVisible"></i>
+      </transition>
+    </div>
+  </div>
+</div>
+
+<transition name="fade">
+  <div class="menu-container" style="display: none;" v-show="menuVisible">
+    <div class="menu-list">
+      
+        
+          <a href="/" class="menu purple-link">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="menu purple-link">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="menu purple-link">
+            标签
+          </a>
+        
+      
+        
+          <a href="https://ra7n.github.io/post/about" class="menu purple-link">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+</transition>
+
+
+      <div class="content-container">
+        <div class="post-detail">
+          
+            <div class="feature-container" style="background-image: url('https://Ra7n.github.io/post-images/crack.png')">
+            </div>
+          
+          <h2 class="post-title">Crack基本使用(高效弱口令爆破-工具分享)</h2>
+          <div class="post-info post-detail-info">
+            <span><i class="icon-calendar-outline"></i> 2022-12-02</span>
+            
+              <span>
+                <i class="icon-pricetags-outline"></i>
+                
+                  <a href="https://Ra7n.github.io/tag/eVMn7pjKl/">
+                    爆破
+                    
+                      ，
+                    
+                  </a>
+                
+                  <a href="https://Ra7n.github.io/tag/saWWF0sM8/">
+                    Github优秀项目
+                    
+                      ，
+                    
+                  </a>
+                
+                  <a href="https://Ra7n.github.io/tag/HqMlVNHniz/">
+                    渗透测试
+                    
+                  </a>
+                
+              </span>
+            
+          </div>
+          <div class="post-content" v-pre>
+            <pre><code>   ______                __  
+  / ____/________ ______/ /__
+ / /   / ___/ __ `/ ___/ //_/
+/ /___/ /  / /_/ / /__/ ,&lt;   
+\____/_/   \__,_/\___/_/|_|  
+</code></pre>
+<ul>
+<li>项目地址:https://github.com/niudaii/crack</li>
+<li>作者:niudaii</li>
+<li>用途:支持多种协议的弱口令检测&amp;爆破工具</li>
+<li>开发语言:Go</li>
+</ul>
+<h3 id="支持协议">支持协议:</h3>
+<ul>
+<li>ftp</li>
+<li>ssh</li>
+<li>wmi</li>
+<li>wmihash</li>
+<li>smb</li>
+<li>msssql</li>
+<li>oracle</li>
+<li>mysql</li>
+<li>rdp</li>
+<li>postgres</li>
+<li>redis</li>
+<li>memcached</li>
+<li>mongodb</li>
+</ul>
+<h3 id="使用">使用:</h3>
+<pre><code class="language-SHELL">Usage:
+  ./crack + [flags]
+
+Flags:
+INPUT(输入):
+   -i &amp; -input [string]       # 输入测试目标(例子: -i '127.0.0.1:3306', -i '127.0.0.1:3307|mysql')
+   -f &amp; -input-file [string]  # 批量爆破,指定目标文件(例子: -f 'xxx.txt')
+   -m &amp; -module [string]      # 选择一个模块 crack(ftp,ssh,wmi,mssql,oracle,mysql,rdp,postgres,redis,memcached,mongodb) (default &quot;all&quot;)
+   -user [string]             # 指定用户名(例子: -user 'admin,root')
+   -pass [string]             # 指定密码(例子: -pass 'admin,root')
+   -user-file [string]        # 指定用户名字典(例子: -user-file 'user.txt')
+   -pass-file [string]        # 指定密码字典(例子: -pass-file 'pass.txt')
+
+CONFIG:
+   -threads [int]             # 指定线程数量 (默认值 1)
+   -timeout [int]             # 指定超时时间 (默认值 10)
+   -delay [int]    			 # 指定请求之间的间隙时间,单位为秒/s(禁止指定0)
+   -crack-all    crack all user:pass
+
+OUTPUT:
+   -o &amp; -output [string]  	  # 输出执行结果到指定文件 (默认值 &quot;crack.txt&quot;)
+   -nc &amp; -no-color      	  # 输出内容不显示颜色
+
+DEBUG:
+   -silent                    # 在输出中只显示结果 
+   -debug                     # 显示调试输出,查看详细的执行信息
+</code></pre>
+<h3 id="演示">演示:</h3>
+<p>​	<strong>尝试爆破本地ssh,mysql服务,使用的均为默认内置字典,就九十多条数据,可以自定义指定字典哦</strong></p>
+<h4 id="mysql">Mysql:</h4>
+<figure data-type="image" tabindex="1"><img src="https://Ra7n.github.io/post-images/1669990335139.png" alt="" loading="lazy"></figure>
+<h4 id="更改mysql密码后采用指定字典爆破">更改Mysql密码后采用指定字典爆破:</h4>
+<p>​	Golang开发效率很快,1000条数据大概2秒,真实攻防环境中可以适当调整线程数以及请求间隙,这里指定的是30(略快)</p>
+<figure data-type="image" tabindex="2"><img src="https://Ra7n.github.io/post-images/1669990808149.png" alt="" loading="lazy"></figure>
+<h4 id="ssh">SSH:</h4>
+<p><strong>以下指定了不同用户名进行爆破</strong></p>
+<figure data-type="image" tabindex="3"><img src="https://Ra7n.github.io/post-images/1669990813626.png" alt="" loading="lazy"></figure>
+<p>注意:</p>
+<p>​	请多多支持工具作者,这是一款轻量级且强悍的弱口令检测工具,主要针对(ssh,rdp,数据库等多种协议的爆破)</p>
+
+          </div>
+        </div>
+
+        
+          <div class="next-post">
+            <a class="purple-link" href="https://Ra7n.github.io/post/Httpx-ch-Doc/">
+              <h3 class="post-title">
+                下一篇：Httpx基本使用(主机探测-工具分享-中文手册)
+              </h3>
+            </a>
+          </div>
+          
+      </div>
+
+      
+
+      <div class="site-footer">
+  <div class="slogan">为国之安全奋斗 为信息安全发声</div>
+  <div class="social-container">
+    
+      
+        <a href="https://github.com/Ra7n" target="_blank">
+          <i class="fab fa-github"></i>
+        </a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+  <b>文章仅供学习参考,严禁用于非法测试!!!,产生一切后果自行承担<b/>
+<br/>
+Copyrights © 2022 | Ra7n
+<br/>
+Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://Ra7n.github.io/atom.xml" target="_blank">RSS</a>
+</div>
+
+
+    </div>
+    <script type="application/javascript">
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

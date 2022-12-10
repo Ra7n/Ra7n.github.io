@@ -1,0 +1,199 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    
+<meta charset="utf-8" >
+
+<title>ThinkPHP&lt;6.0.14版本文件包含漏洞 | Ra7n&#39;s Blog</title>
+<meta name="description" content="为国之安全奋斗 为信息安全发声">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.0/animate.min.css">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://Ra7n.github.io/favicon.ico?v=1670661199989">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://Ra7n.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+      <div class="site-header-container">
+  <div class="site-header">
+    <div class="left">
+      <a href="https://Ra7n.github.io">
+        <img class="avatar" src="https://Ra7n.github.io/images/avatar.png?v=1670661199989" alt="" width="32px" height="32px">
+      </a>
+      <a href="https://Ra7n.github.io">
+        <h1 class="site-title">Ra7n&#39;s Blog</h1>
+      </a>
+    </div>
+    <div class="right">
+      <transition name="fade">
+        <i class="icon" :class="{ 'icon-close-outline': menuVisible, 'icon-menu-outline': !menuVisible }" @click="menuVisible = !menuVisible"></i>
+      </transition>
+    </div>
+  </div>
+</div>
+
+<transition name="fade">
+  <div class="menu-container" style="display: none;" v-show="menuVisible">
+    <div class="menu-list">
+      
+        
+          <a href="/" class="menu purple-link">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="menu purple-link">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="menu purple-link">
+            标签
+          </a>
+        
+      
+        
+          <a href="https://ra7n.github.io/post/about" class="menu purple-link">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+</transition>
+
+
+      <div class="content-container">
+        <div class="post-detail">
+          
+            <div class="feature-container" style="background-image: url('https://Ra7n.github.io/post-images/ThinkPHP6-middleware-FileInclude.png')">
+            </div>
+          
+          <h2 class="post-title">ThinkPHP&lt;6.0.14版本文件包含漏洞</h2>
+          <div class="post-info post-detail-info">
+            <span><i class="icon-calendar-outline"></i> 2022-12-10</span>
+            
+          </div>
+          <div class="post-content" v-pre>
+            <p>​	昨天Hacking8推送了一篇ThinkPHP6.0.14版本存在RCE的文章,今天准备在本地复现一下这个漏洞。</p>
+<h3 id="漏洞成因">漏洞成因:</h3>
+<p>​	这个漏洞是有利用条件的,前提是当前的ThinkPHP开启了&quot;多语言&quot;中间件功能。</p>
+<p>​	中间件是ThinkPHP中的一个功能,可以用来对请求数据进行过滤处理,请求拦截,自动分发处理等等。很多额外的非核心业务流程的处理都可以交给中间件执行。</p>
+<p>​	ThinkPHP中的中间件分为系统中间件和应用中间件,系统中间件为框架自带的内置的中间件。</p>
+<p>​	问题出在多语言加载的中间件中(系统中间件),在默认情况下系统中间件都是关闭的,需要手动开启。该中间件功能开启后会根据具体需求自动加载语言包,系统会自动侦测多语言进行自动切换。</p>
+<p>​	该中间件在获取用户键入参数时,没有对参数进行严格过滤,从而导致了文件包含。</p>
+<p>​																														                                  详情请查看--https://www.php.cn/phpkj/thinkphp/438708.html<br>
+<br/><br>
+<br/></p>
+<h3 id="本地复现">本地复现:</h3>
+<h4 id="利用前提">利用前提:</h4>
+<p>​	开启多语言中间件功能<br>
+<br/></p>
+<h4 id="0x01">0x01:</h4>
+<p>首先在public文件夹下新建test.php文件,用于被包含文件测试漏洞是否存在<br>
+<img src="https://Ra7n.github.io/post-images/1670658395319.png" alt="" loading="lazy"></p>
+<p>中间件在开启的情况下会默认调用其中的handle()方法,handel方法中调用了detect方法。</p>
+<figure data-type="image" tabindex="1"><img src="https://Ra7n.github.io/post-images/1670658399524.png" alt="" loading="lazy"></figure>
+<p>跟进detect方法,langSet变量默认情况下为空,再向下会进入第一个分支获取url中的lang参数,config变量在该中间件类的构造方法中进行了获取,在配置文件中其&quot;detect_var&quot;键的值为&quot;lang&quot;,这里获取到了url中的lang参数,并且没有对该参数做任何过滤,直接赋值给了LangSet变量。继续向下,进入分支,&quot;allow_lang_list&quot;默认为空,进入第一个分支LangSet直接被赋值给了Range并返回。</p>
+<figure data-type="image" tabindex="2"><img src="https://Ra7n.github.io/post-images/1670658403558.png" alt="" loading="lazy"></figure>
+<p><img src="https://Ra7n.github.io/post-images/1670658408817.png" alt="" loading="lazy"><br>
+<br/></p>
+<h4 id="0x02">0x02:</h4>
+<p>​	回到handle方法,此时的<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>l</mi><mi>a</mi><mi>n</mi><mi>g</mi><mi>s</mi><mi>e</mi><mi>t</mi><mi mathvariant="normal">可</mi><mi mathvariant="normal">控</mi><mi mathvariant="normal">的</mi><mo separator="true">,</mo><mi mathvariant="normal">是</mi><mi mathvariant="normal">未</mi><mi mathvariant="normal">经</mi><mi mathvariant="normal">任</mi><mi mathvariant="normal">何</mi><mi mathvariant="normal">处</mi><mi mathvariant="normal">理</mi><mi mathvariant="normal">的</mi><mi>l</mi><mi>a</mi><mi>n</mi><mi>g</mi><mi mathvariant="normal">参</mi><mi mathvariant="normal">数</mi><mo separator="true">,</mo><mi mathvariant="normal">这</mi><mi mathvariant="normal">里</mi><mi mathvariant="normal">调</mi><mi mathvariant="normal">用</mi><mi>d</mi><mi>e</mi><mi>f</mi><mi>a</mi><mi>u</mi><mi>l</mi><mi>t</mi><mi>L</mi><mi>a</mi><mi>n</mi><mi>g</mi><mi>S</mi><mi>e</mi><mi>t</mi><mo>(</mo><mo>)</mo><mi mathvariant="normal">获</mi><mi mathvariant="normal">取</mi><mi mathvariant="normal">默</mi><mi mathvariant="normal">认</mi><mi mathvariant="normal">语</mi><mi mathvariant="normal">言</mi><mi mathvariant="normal">默</mi><mi mathvariant="normal">认</mi><mi mathvariant="normal">语</mi><mi mathvariant="normal">言</mi><mi mathvariant="normal">为</mi><mi mathvariant="normal">&quot;</mi><mi>z</mi><mi>h</mi><mo>−</mo><mi>c</mi><mi>n</mi><mi mathvariant="normal">&quot;</mi><mo separator="true">,</mo><mi mathvariant="normal">字</mi><mi mathvariant="normal">符</mi><mi mathvariant="normal">串</mi><mi mathvariant="normal">比</mi><mi mathvariant="normal">较</mi><mo separator="true">,</mo><mi mathvariant="normal">如</mi><mi mathvariant="normal">果</mi><mi mathvariant="normal">不</mi><mi mathvariant="normal">一</mi><mi mathvariant="normal">样</mi><mi mathvariant="normal">则</mi><mi mathvariant="normal">调</mi><mi mathvariant="normal">用</mi><mi>s</mi><mi>w</mi><mi>i</mi><mi>t</mi><mi>c</mi><mi>h</mi><mi>L</mi><mi>a</mi><mi>n</mi><mi>g</mi><mi>S</mi><mi>e</mi><mi>t</mi><mo>(</mo><mo>)</mo><mi mathvariant="normal">方</mi><mi mathvariant="normal">法</mi><mo separator="true">,</mo><mi mathvariant="normal">并</mi><mi mathvariant="normal">将</mi><mi mathvariant="normal">可</mi><mi mathvariant="normal">控</mi><mi mathvariant="normal">变</mi><mi mathvariant="normal">量</mi></mrow><annotation encoding="application/x-tex">langset可控的,是未经任何处理的lang参数,这里调用defaultLangSet()获取默认语言默认语言为&quot;zh-cn&quot;,字符串比较,如果不一样则调用switchLangSet()方法,并将可控变量</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">a</span><span class="mord mathdefault">n</span><span class="mord mathdefault" style="margin-right:0.03588em;">g</span><span class="mord mathdefault">s</span><span class="mord mathdefault">e</span><span class="mord mathdefault">t</span><span class="mord cjk_fallback">可</span><span class="mord cjk_fallback">控</span><span class="mord cjk_fallback">的</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">是</span><span class="mord cjk_fallback">未</span><span class="mord cjk_fallback">经</span><span class="mord cjk_fallback">任</span><span class="mord cjk_fallback">何</span><span class="mord cjk_fallback">处</span><span class="mord cjk_fallback">理</span><span class="mord cjk_fallback">的</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">a</span><span class="mord mathdefault">n</span><span class="mord mathdefault" style="margin-right:0.03588em;">g</span><span class="mord cjk_fallback">参</span><span class="mord cjk_fallback">数</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">这</span><span class="mord cjk_fallback">里</span><span class="mord cjk_fallback">调</span><span class="mord cjk_fallback">用</span><span class="mord mathdefault">d</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right:0.10764em;">f</span><span class="mord mathdefault">a</span><span class="mord mathdefault">u</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">t</span><span class="mord mathdefault">L</span><span class="mord mathdefault">a</span><span class="mord mathdefault">n</span><span class="mord mathdefault" style="margin-right:0.03588em;">g</span><span class="mord mathdefault" style="margin-right:0.05764em;">S</span><span class="mord mathdefault">e</span><span class="mord mathdefault">t</span><span class="mopen">(</span><span class="mclose">)</span><span class="mord cjk_fallback">获</span><span class="mord cjk_fallback">取</span><span class="mord cjk_fallback">默</span><span class="mord cjk_fallback">认</span><span class="mord cjk_fallback">语</span><span class="mord cjk_fallback">言</span><span class="mord cjk_fallback">默</span><span class="mord cjk_fallback">认</span><span class="mord cjk_fallback">语</span><span class="mord cjk_fallback">言</span><span class="mord cjk_fallback">为</span><span class="mord">&quot;</span><span class="mord mathdefault" style="margin-right:0.04398em;">z</span><span class="mord mathdefault">h</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">c</span><span class="mord mathdefault">n</span><span class="mord">&quot;</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">字</span><span class="mord cjk_fallback">符</span><span class="mord cjk_fallback">串</span><span class="mord cjk_fallback">比</span><span class="mord cjk_fallback">较</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">如</span><span class="mord cjk_fallback">果</span><span class="mord cjk_fallback">不</span><span class="mord cjk_fallback">一</span><span class="mord cjk_fallback">样</span><span class="mord cjk_fallback">则</span><span class="mord cjk_fallback">调</span><span class="mord cjk_fallback">用</span><span class="mord mathdefault">s</span><span class="mord mathdefault" style="margin-right:0.02691em;">w</span><span class="mord mathdefault">i</span><span class="mord mathdefault">t</span><span class="mord mathdefault">c</span><span class="mord mathdefault">h</span><span class="mord mathdefault">L</span><span class="mord mathdefault">a</span><span class="mord mathdefault">n</span><span class="mord mathdefault" style="margin-right:0.03588em;">g</span><span class="mord mathdefault" style="margin-right:0.05764em;">S</span><span class="mord mathdefault">e</span><span class="mord mathdefault">t</span><span class="mopen">(</span><span class="mclose">)</span><span class="mord cjk_fallback">方</span><span class="mord cjk_fallback">法</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">并</span><span class="mord cjk_fallback">将</span><span class="mord cjk_fallback">可</span><span class="mord cjk_fallback">控</span><span class="mord cjk_fallback">变</span><span class="mord cjk_fallback">量</span></span></span></span>langset作为参数进行传递。跟进switchLangSet方法。</p>
+<figure data-type="image" tabindex="3"><img src="https://Ra7n.github.io/post-images/1670658413150.png" alt="" loading="lazy"></figure>
+<p><img src="https://Ra7n.github.io/post-images/1670658417558.png" alt="" loading="lazy"><br>
+<br/></p>
+<h4 id="0x03">0x03:</h4>
+<p>​		switchLangSet首先判断是否为空,参数不为空继续向下执行。调用load方法,load方法首先获取tp项目路径。再将可控变量$langset进行拼接。最终得到字符串&quot;项目路径+\vendor\topthink\framework\src\lang../../../../public/test.php&quot;,将其作为数组成员传递进load方法。跟进load方法。<br>
+<img src="https://Ra7n.github.io/post-images/1670658430224.png" alt="" loading="lazy"><br>
+<img src="https://Ra7n.github.io/post-images/1670658433610.png" alt="" loading="lazy"><br>
+<br/></p>
+<h4 id="0x04">0x04:</h4>
+<p>​	load方法遍历遍历数组,该数组中的成员已被lang参数污染,首先判断该文件是否存在,存在则调用parse()方法进行包含。</p>
+<p><img src="https://Ra7n.github.io/post-images/1670658443544.png" alt="" loading="lazy"><br>
+<img src="https://Ra7n.github.io/post-images/1670658447396.png" alt="" loading="lazy"><br>
+<br/></p>
+<h4 id="利用成功">利用成功:</h4>
+<p><img src="https://Ra7n.github.io/post-images/1670658452303.png" alt="" loading="lazy"><br>
+<br/></p>
+<h3 id="函数调用链">函数调用链:</h3>
+<figure data-type="image" tabindex="4"><img src="https://Ra7n.github.io/post-images/1670658458278.png" alt="" loading="lazy"></figure>
+<pre><code>                    ---------------------文章仅供学习参考,严禁用于非法测试!!!,产生一切后果自行承担
+</code></pre>
+
+          </div>
+        </div>
+
+        
+          <div class="next-post">
+            <a class="purple-link" href="https://Ra7n.github.io/post/Searchsploit-use/">
+              <h3 class="post-title">
+                下一篇：Searchsploit(Exploit-db漏洞库检索-工具分享)
+              </h3>
+            </a>
+          </div>
+          
+      </div>
+
+      
+
+      <div class="site-footer">
+  <div class="slogan">为国之安全奋斗 为信息安全发声</div>
+  <div class="social-container">
+    
+      
+        <a href="https://github.com/Ra7n" target="_blank">
+          <i class="fab fa-github"></i>
+        </a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+  <b>文章仅供学习参考,严禁用于非法测试!!!,产生一切后果自行承担<b/>
+<br/>
+Copyrights © 2022 | Ra7n
+<br/>
+Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://Ra7n.github.io/atom.xml" target="_blank">RSS</a>
+</div>
+
+
+    </div>
+    <script type="application/javascript">
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

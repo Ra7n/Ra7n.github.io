@@ -1,0 +1,1224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://Ra7n.github.io</id>
+    <title>Ra7n&apos;s Blog</title>
+    <updated>2022-12-10T08:33:23.807Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://Ra7n.github.io"/>
+    <link rel="self" href="https://Ra7n.github.io/atom.xml"/>
+    <subtitle>为国之安全奋斗 为信息安全发声</subtitle>
+    <logo>https://Ra7n.github.io/images/avatar.png</logo>
+    <icon>https://Ra7n.github.io/favicon.ico</icon>
+    <rights>All rights reserved 2022, Ra7n&apos;s Blog</rights>
+    <entry>
+        <title type="html"><![CDATA[ThinkPHP<6.0.14版本文件包含漏洞]]></title>
+        <id>https://Ra7n.github.io/post/ThinkPHP6-middleware-FileInclude/</id>
+        <link href="https://Ra7n.github.io/post/ThinkPHP6-middleware-FileInclude/">
+        </link>
+        <updated>2022-12-10T07:43:44.000Z</updated>
+        <content type="html"><![CDATA[<p>​	昨天Hacking8推送了一篇ThinkPHP6.0.14版本存在RCE的文章,今天准备在本地复现一下这个漏洞。</p>
+<h3 id="漏洞成因">漏洞成因:</h3>
+<p>​	这个漏洞是有利用条件的,前提是当前的ThinkPHP开启了&quot;多语言&quot;中间件功能。</p>
+<p>​	中间件是ThinkPHP中的一个功能,可以用来对请求数据进行过滤处理,请求拦截,自动分发处理等等。很多额外的非核心业务流程的处理都可以交给中间件执行。</p>
+<p>​	ThinkPHP中的中间件分为系统中间件和应用中间件,系统中间件为框架自带的内置的中间件。</p>
+<p>​	问题出在多语言加载的中间件中(系统中间件),在默认情况下系统中间件都是关闭的,需要手动开启。该中间件功能开启后会根据具体需求自动加载语言包,系统会自动侦测多语言进行自动切换。</p>
+<p>​	该中间件在获取用户键入参数时,没有对参数进行严格过滤,从而导致了文件包含。</p>
+<p>​																														                                  详情请查看--https://www.php.cn/phpkj/thinkphp/438708.html<br>
+<br/><br>
+<br/></p>
+<h3 id="本地复现">本地复现:</h3>
+<h4 id="利用前提">利用前提:</h4>
+<p>​	开启多语言中间件功能<br>
+<br/></p>
+<h4 id="0x01">0x01:</h4>
+<p>首先在public文件夹下新建test.php文件,用于被包含文件测试漏洞是否存在<br>
+<img src="https://Ra7n.github.io/post-images/1670658395319.png" alt="" loading="lazy"></p>
+<p>中间件在开启的情况下会默认调用其中的handle()方法,handel方法中调用了detect方法。</p>
+<figure data-type="image" tabindex="1"><img src="https://Ra7n.github.io/post-images/1670658399524.png" alt="" loading="lazy"></figure>
+<p>跟进detect方法,langSet变量默认情况下为空,再向下会进入第一个分支获取url中的lang参数,config变量在该中间件类的构造方法中进行了获取,在配置文件中其&quot;detect_var&quot;键的值为&quot;lang&quot;,这里获取到了url中的lang参数,并且没有对该参数做任何过滤,直接赋值给了LangSet变量。继续向下,进入分支,&quot;allow_lang_list&quot;默认为空,进入第一个分支LangSet直接被赋值给了Range并返回。</p>
+<figure data-type="image" tabindex="2"><img src="https://Ra7n.github.io/post-images/1670658403558.png" alt="" loading="lazy"></figure>
+<p><img src="https://Ra7n.github.io/post-images/1670658408817.png" alt="" loading="lazy"><br>
+<br/></p>
+<h4 id="0x02">0x02:</h4>
+<p>​	回到handle方法,此时的<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>l</mi><mi>a</mi><mi>n</mi><mi>g</mi><mi>s</mi><mi>e</mi><mi>t</mi><mi mathvariant="normal">可</mi><mi mathvariant="normal">控</mi><mi mathvariant="normal">的</mi><mo separator="true">,</mo><mi mathvariant="normal">是</mi><mi mathvariant="normal">未</mi><mi mathvariant="normal">经</mi><mi mathvariant="normal">任</mi><mi mathvariant="normal">何</mi><mi mathvariant="normal">处</mi><mi mathvariant="normal">理</mi><mi mathvariant="normal">的</mi><mi>l</mi><mi>a</mi><mi>n</mi><mi>g</mi><mi mathvariant="normal">参</mi><mi mathvariant="normal">数</mi><mo separator="true">,</mo><mi mathvariant="normal">这</mi><mi mathvariant="normal">里</mi><mi mathvariant="normal">调</mi><mi mathvariant="normal">用</mi><mi>d</mi><mi>e</mi><mi>f</mi><mi>a</mi><mi>u</mi><mi>l</mi><mi>t</mi><mi>L</mi><mi>a</mi><mi>n</mi><mi>g</mi><mi>S</mi><mi>e</mi><mi>t</mi><mo>(</mo><mo>)</mo><mi mathvariant="normal">获</mi><mi mathvariant="normal">取</mi><mi mathvariant="normal">默</mi><mi mathvariant="normal">认</mi><mi mathvariant="normal">语</mi><mi mathvariant="normal">言</mi><mi mathvariant="normal">默</mi><mi mathvariant="normal">认</mi><mi mathvariant="normal">语</mi><mi mathvariant="normal">言</mi><mi mathvariant="normal">为</mi><mi mathvariant="normal">&quot;</mi><mi>z</mi><mi>h</mi><mo>−</mo><mi>c</mi><mi>n</mi><mi mathvariant="normal">&quot;</mi><mo separator="true">,</mo><mi mathvariant="normal">字</mi><mi mathvariant="normal">符</mi><mi mathvariant="normal">串</mi><mi mathvariant="normal">比</mi><mi mathvariant="normal">较</mi><mo separator="true">,</mo><mi mathvariant="normal">如</mi><mi mathvariant="normal">果</mi><mi mathvariant="normal">不</mi><mi mathvariant="normal">一</mi><mi mathvariant="normal">样</mi><mi mathvariant="normal">则</mi><mi mathvariant="normal">调</mi><mi mathvariant="normal">用</mi><mi>s</mi><mi>w</mi><mi>i</mi><mi>t</mi><mi>c</mi><mi>h</mi><mi>L</mi><mi>a</mi><mi>n</mi><mi>g</mi><mi>S</mi><mi>e</mi><mi>t</mi><mo>(</mo><mo>)</mo><mi mathvariant="normal">方</mi><mi mathvariant="normal">法</mi><mo separator="true">,</mo><mi mathvariant="normal">并</mi><mi mathvariant="normal">将</mi><mi mathvariant="normal">可</mi><mi mathvariant="normal">控</mi><mi mathvariant="normal">变</mi><mi mathvariant="normal">量</mi></mrow><annotation encoding="application/x-tex">langset可控的,是未经任何处理的lang参数,这里调用defaultLangSet()获取默认语言默认语言为&quot;zh-cn&quot;,字符串比较,如果不一样则调用switchLangSet()方法,并将可控变量</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">a</span><span class="mord mathdefault">n</span><span class="mord mathdefault" style="margin-right:0.03588em;">g</span><span class="mord mathdefault">s</span><span class="mord mathdefault">e</span><span class="mord mathdefault">t</span><span class="mord cjk_fallback">可</span><span class="mord cjk_fallback">控</span><span class="mord cjk_fallback">的</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">是</span><span class="mord cjk_fallback">未</span><span class="mord cjk_fallback">经</span><span class="mord cjk_fallback">任</span><span class="mord cjk_fallback">何</span><span class="mord cjk_fallback">处</span><span class="mord cjk_fallback">理</span><span class="mord cjk_fallback">的</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">a</span><span class="mord mathdefault">n</span><span class="mord mathdefault" style="margin-right:0.03588em;">g</span><span class="mord cjk_fallback">参</span><span class="mord cjk_fallback">数</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">这</span><span class="mord cjk_fallback">里</span><span class="mord cjk_fallback">调</span><span class="mord cjk_fallback">用</span><span class="mord mathdefault">d</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right:0.10764em;">f</span><span class="mord mathdefault">a</span><span class="mord mathdefault">u</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">t</span><span class="mord mathdefault">L</span><span class="mord mathdefault">a</span><span class="mord mathdefault">n</span><span class="mord mathdefault" style="margin-right:0.03588em;">g</span><span class="mord mathdefault" style="margin-right:0.05764em;">S</span><span class="mord mathdefault">e</span><span class="mord mathdefault">t</span><span class="mopen">(</span><span class="mclose">)</span><span class="mord cjk_fallback">获</span><span class="mord cjk_fallback">取</span><span class="mord cjk_fallback">默</span><span class="mord cjk_fallback">认</span><span class="mord cjk_fallback">语</span><span class="mord cjk_fallback">言</span><span class="mord cjk_fallback">默</span><span class="mord cjk_fallback">认</span><span class="mord cjk_fallback">语</span><span class="mord cjk_fallback">言</span><span class="mord cjk_fallback">为</span><span class="mord">&quot;</span><span class="mord mathdefault" style="margin-right:0.04398em;">z</span><span class="mord mathdefault">h</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">c</span><span class="mord mathdefault">n</span><span class="mord">&quot;</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">字</span><span class="mord cjk_fallback">符</span><span class="mord cjk_fallback">串</span><span class="mord cjk_fallback">比</span><span class="mord cjk_fallback">较</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">如</span><span class="mord cjk_fallback">果</span><span class="mord cjk_fallback">不</span><span class="mord cjk_fallback">一</span><span class="mord cjk_fallback">样</span><span class="mord cjk_fallback">则</span><span class="mord cjk_fallback">调</span><span class="mord cjk_fallback">用</span><span class="mord mathdefault">s</span><span class="mord mathdefault" style="margin-right:0.02691em;">w</span><span class="mord mathdefault">i</span><span class="mord mathdefault">t</span><span class="mord mathdefault">c</span><span class="mord mathdefault">h</span><span class="mord mathdefault">L</span><span class="mord mathdefault">a</span><span class="mord mathdefault">n</span><span class="mord mathdefault" style="margin-right:0.03588em;">g</span><span class="mord mathdefault" style="margin-right:0.05764em;">S</span><span class="mord mathdefault">e</span><span class="mord mathdefault">t</span><span class="mopen">(</span><span class="mclose">)</span><span class="mord cjk_fallback">方</span><span class="mord cjk_fallback">法</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">并</span><span class="mord cjk_fallback">将</span><span class="mord cjk_fallback">可</span><span class="mord cjk_fallback">控</span><span class="mord cjk_fallback">变</span><span class="mord cjk_fallback">量</span></span></span></span>langset作为参数进行传递。跟进switchLangSet方法。</p>
+<figure data-type="image" tabindex="3"><img src="https://Ra7n.github.io/post-images/1670658413150.png" alt="" loading="lazy"></figure>
+<p><img src="https://Ra7n.github.io/post-images/1670658417558.png" alt="" loading="lazy"><br>
+<br/></p>
+<h4 id="0x03">0x03:</h4>
+<p>​		switchLangSet首先判断是否为空,参数不为空继续向下执行。调用load方法,load方法首先获取tp项目路径。再将可控变量$langset进行拼接。最终得到字符串&quot;项目路径+\vendor\topthink\framework\src\lang../../../../public/test.php&quot;,将其作为数组成员传递进load方法。跟进load方法。<br>
+<img src="https://Ra7n.github.io/post-images/1670658430224.png" alt="" loading="lazy"><br>
+<img src="https://Ra7n.github.io/post-images/1670658433610.png" alt="" loading="lazy"><br>
+<br/></p>
+<h4 id="0x04">0x04:</h4>
+<p>​	load方法遍历遍历数组,该数组中的成员已被lang参数污染,首先判断该文件是否存在,存在则调用parse()方法进行包含。</p>
+<p><img src="https://Ra7n.github.io/post-images/1670658443544.png" alt="" loading="lazy"><br>
+<img src="https://Ra7n.github.io/post-images/1670658447396.png" alt="" loading="lazy"><br>
+<br/></p>
+<h4 id="利用成功">利用成功:</h4>
+<p><img src="https://Ra7n.github.io/post-images/1670658452303.png" alt="" loading="lazy"><br>
+<br/></p>
+<h3 id="函数调用链">函数调用链:</h3>
+<figure data-type="image" tabindex="4"><img src="https://Ra7n.github.io/post-images/1670658458278.png" alt="" loading="lazy"></figure>
+<pre><code>                    ---------------------文章仅供学习参考,严禁用于非法测试!!!,产生一切后果自行承担
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Searchsploit(Exploit-db漏洞库检索-工具分享)]]></title>
+        <id>https://Ra7n.github.io/post/Searchsploit-use/</id>
+        <link href="https://Ra7n.github.io/post/Searchsploit-use/">
+        </link>
+        <updated>2022-12-05T03:41:48.000Z</updated>
+        <content type="html"><![CDATA[<h3 id="前言">前言:</h3>
+<p>​	在讲Searchsploit之前先说一下Exploit-Database,Exploit-Database(简称Exploit-db)是Kali官方进行维护的一个漏洞库项目,存储了各种类型的漏洞利用程序、漏洞报告、安全文章、相关技术教程等信息。该项目不定时进行更新。</p>
+<p>​	而Searchsploit是kali系统自带的一款用于离线搜索Exploit-db的命令行工具,在卡里本地附带了Exploit-db的副本,Searchsploit用于使用一些特定的指令对Exploit-db数据库进行检索,离线搜索在不联网的渗透环境下还有很有用的。去年在学习Linux系统提权时使用过这款工具,今天再来详细的学习一下这款工具的具体使用流程。</p>
+<p>​	在线使用该项目请访问:https://www.exploit-db.com/</p>
+<h3 id="安装">安装:</h3>
+<pre><code class="language-yaml">windows: 该工具暂无windows版本
+Linux: 
+  Kali: 默认自带
+  Other: 需要自行安装
+</code></pre>
+<h4 id="ubantu系统">Ubantu系统:</h4>
+<pre><code class="language-SHELL">sudo git clone https://github.com/offensive-security/exploitdb.git /opt/exploitdb
+sudo ln -sf /opt/exploitdb/searchsploit /usr/local/bin/searchsploit
+searchsploit -h
+searchsploit -u
+</code></pre>
+<h3 id="使用">使用:</h3>
+<h4 id="0x01-获取帮助">0x01-获取帮助</h4>
+<p><strong>在kali命令行窗口输入searchsploit可获取使用帮助</strong></p>
+<pre><code class="language-shell">searchsploit -h &amp; -help # 获取使用帮助
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://Ra7n.github.io/post-images/1670211871018.png" alt="" loading="lazy"></figure>
+<h4 id="0x02-更新searchsploit">0x02-更新Searchsploit</h4>
+<p>​	请定期进行更新</p>
+<pre><code class="language-shell">searchsploit -u
+# 如果是旧版本的Kali还需要执行
+sudo apt update &amp;&amp; sudo apt -y full-upgrade # 更新软件包
+</code></pre>
+<figure data-type="image" tabindex="2"><img src="https://Ra7n.github.io/post-images/1670211876196.png" alt="" loading="lazy"></figure>
+<h4 id="0x03-具体使用参数">0x03-具体使用参数:</h4>
+<pre><code class="language-yaml">用法: searchsploit [options] 参数1 参数2 参数3....
+
+
+适用范例:
+	searchsploit afd windows local
+  	searchsploit -t oracle windows
+  	searchsploit -p 39446
+  	searchsploit linux kernel 3.2 --exclude=&quot;(PoC)|/dos/&quot;
+  	searchsploit -s Apache Struts 2.0.0
+  	searchsploit linux reverse password
+  	searchsploit -j 55555 | jq
+  	searchsploit --cve 2021-44228
+
+
+指定搜索条件:
+       -c, --case    [参数]     # 执行区分大小写的搜索(默认情况下是对大小写不敏感的)
+       -e, --exact   [参数]     # 切换ORDER匹配模式(默认情况下为AND模式),例:&quot;wordpress or 4.1&quot;使用or连接搜索关键字 &quot; 所以这种模式下搜索结果比较模糊
+       -s, --strict  [参数]     # 执行严格搜索，因此输入值必须存在，禁用版本范围的模糊搜索(如&quot;1.0&lt;1.3&quot;中不会检测到&quot;1.1&quot;,需指定明确的版本信息）
+       -t, --title    [参数]    # 只搜索利用标题(默认情况下是检索标题和文件的路径)
+       --exclude=&quot;参数&quot;         #排除部分搜索结果,可连接多个值,使用&quot;|&quot;对关键字进行分隔(例如:--exclude=&quot;term1|term2|term3&quot;)
+       --cve          [参数(cve编号)]  # 搜索常见漏洞/指定cve编号进行搜索
+       
+ 输出选项:
+ 	   -j, --json     [参数]       # 显示JSON格式的结果
+   	   -o, --overflow [参数]       # 允许利用标题溢出其列
+   	   -p, --path     [EDB-ID]     # 指定EDB-ID值,显示攻击的完整路径
+       -v, --verbose               # 在输出中显示更多信息
+       -w, --www      [参数]       # 显示到Exploit-DB.com在线库中的URL路径，而不是本地路径
+       --id                   	   # 显示EDB-ID值，而不是本地路径
+       --disable-colour            # 禁用搜索结果中的颜色高亮显示
+      
+      
+ 其它:
+ 	-m, --mirror   [EDB-ID]        # 将利用漏洞镜像(或复制)到当前工作目录
+ 	-x, --examine  [EDB-ID] 	   # 使用$PAGER检查(即打开)漏洞
+    -h, --help                      # 显示此帮助界面
+    -u, --update                    # 检查并安装任何exploitdb包更新(brew, deb和git)
+    --nmap  [file.xml]              # 使用服务版本检查Nmap的XML输出中的所有结果(例如:Nmap [host] -sV -oX file.xml)
+</code></pre>
+<h3 id="简单使用">简单使用:</h3>
+<pre><code class="language-shell">searchsploit -s windows smb # 严格模式搜索
+</code></pre>
+<figure data-type="image" tabindex="3"><img src="https://Ra7n.github.io/post-images/1670211882663.png" alt="" loading="lazy"></figure>
+<pre><code class="language-shell"># 显示www.exploit-db.com在线库该漏洞访问路径
+searchsploit -s windows smb -w
+</code></pre>
+<figure data-type="image" tabindex="4"><img src="https://Ra7n.github.io/post-images/1670211888913.png" alt="" loading="lazy"></figure>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[记一次BadUsb烧录过程]]></title>
+        <id>https://Ra7n.github.io/post/Badusb-use/</id>
+        <link href="https://Ra7n.github.io/post/Badusb-use/">
+        </link>
+        <updated>2022-12-04T16:24:51.000Z</updated>
+        <content type="html"><![CDATA[<p>​	某宝10元买的BadUsb到了,简单的来使用一下,特地记录一下环境搭建与烧录的过程</p>
+<pre><code class="language-yaml">Arduino IDE Version: 1.6.5
+设备: Digispark
+</code></pre>
+<p>​	至于什么是Badusb,就不在这里展开赘述了;网上一堆看不懂的资料,按照我的理解BadUsb就是一个用于模拟键盘输入的设备。你能用键盘做什么,它就能做什么。</p>
+<h3 id="环境搭建">环境搭建:</h3>
+<h4 id="0x01-下载arduino-ide">0x01-下载Arduino IDE:</h4>
+<p>​	下载地址:https://downloads.arduino.cc/arduino-1.6.5-r5-windows.exe</p>
+<p>​	下载完成后无脑下一步就行了</p>
+<h4 id="0x02-配置arduino-ide">0x02-配置Arduino IDE:</h4>
+<p>​	点击IDE上方&quot;文件&quot;---&gt;&quot;首选项&quot;按钮,将Additional Boards Manager URLs改为，这里是导入Arduino IDE下载附加开发板的json配置文件。</p>
+<pre><code>https://raw.githubusercontent.com/digistump/arduino-boards-index/master/package_digistump_index.json
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://Ra7n.github.io/post-images/1670171247519.png" alt="" loading="lazy"></figure>
+<h4 id="0x03-下载digispark附加开发板模块">0x03-下载digispark附加开发板模块</h4>
+<p>​	在进行这一步之前要开一下代理,否则会下载失败,这是一个坑。开启代理后点击IDE上方&quot;工具&quot;-----&gt;&quot;Boards Manager&quot;按钮。搜索关键字下载即可。</p>
+<figure data-type="image" tabindex="2"><img src="https://Ra7n.github.io/post-images/1670171253546.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="3"><img src="https://Ra7n.github.io/post-images/1670171257802.png" alt="" loading="lazy"></figure>
+<h4 id="0x04-勾选digisparkdefault-165mhz选项">0x04-勾选Digispark(Default-16.5mhz)选项</h4>
+<figure data-type="image" tabindex="4"><img src="https://Ra7n.github.io/post-images/1670171264376.png" alt="" loading="lazy"></figure>
+<p>这样IDE环境就配置好了,就可以开始烧录了</p>
+<h3 id="开始烧录">开始烧录:</h3>
+<h4 id="0x01-下载automator">0x01-下载Automator</h4>
+<p>​	github下载开源项目Automator</p>
+<p>​	地址:https://github.com/Catboy96/Automator/releases</p>
+<p>​	下载最下方中文版的,这个软件的作用是帮助构建烧录的代码</p>
+<h4 id="0x02-生成代码点击生成保存到桌面">0x02-生成代码(点击生成保存到桌面)</h4>
+<figure data-type="image" tabindex="5"><img src="https://Ra7n.github.io/post-images/1670171270116.png" alt="" loading="lazy"></figure>
+<p>0x03-将桌面文件内容复制到IDE中</p>
+<figure data-type="image" tabindex="6"><img src="https://Ra7n.github.io/post-images/1670171275341.png" alt="" loading="lazy"></figure>
+<p>显示60秒提示则插入usb,显示thank you表示烧录成功,这里的动作是win+R在输入chrome rain.github.io,访问博客首页</p>
+<figure data-type="image" tabindex="7"><img src="https://Ra7n.github.io/post-images/1670171281386.png" alt="" loading="lazy"></figure>
+<h3 id="效果演示">效果演示:</h3>
+<figure data-type="image" tabindex="8"><img src="https://Ra7n.github.io/post-images/1670171286178.png" alt="" loading="lazy"></figure>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[汇编基础(学习笔记)]]></title>
+        <id>https://Ra7n.github.io/post/hui-bian-ji-chu/</id>
+        <link href="https://Ra7n.github.io/post/hui-bian-ji-chu/">
+        </link>
+        <updated>2022-12-03T09:48:28.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="汇编基础复习">汇编基础复习</h2>
+<h2 id="导学">导学:</h2>
+<p>​	<strong>人类文明发展的过程中产生了各种各样的语言,不同国家的人通过不同的语言进行沟通,那人类与计算机进行沟通肯定是不可能通过自然语言作为介质进行沟通的,计算机只认识0和1,这种由01组成的序列被称之为&quot;机器语言&quot;,这是人类与计算机之间沟通所使用的语言,假设我们使用机器语言来编写程序那将是很痛苦的,因为这种由01组成的序列没有逻辑性,规律性可言。所以说早期的程序员做程序开发是很痛苦的。直到后来出现了&quot;汇编语言&quot;,这种语言使用一些特定的指令来表示机器语言的一段01序列。汇编语言直接与计算机的cpu做交互,通过编译器将汇编语言翻译成计算机可识别的&quot;机器语言&quot;,这提升了程序开发时的效率。再到后来出现了高级语言,C语言,这种语言的设计更贴近人类的思维逻辑方式指令也变得更简单了,同样由编译器将C语言翻译成能被计算机识别的二进制机器语言从而提升程序编写的效率。这个演变过程说明随着时间的推移,编译器越来越强大了,需要程序员做的事越来越少了。C语言的本质就是编译器把简单的指令翻译成了复杂的汇编指令。如果你准备做一位逆向工程师，那在学习C/C++语言之前有必要先学习汇编语言,因为我们不同于正向开发,我们更应该关注C/C++语言的本质,更应该注重编译器替我们做了哪些事情,学习C/C++语言需要了解本质,在练习时需要使用各种工具查看其反汇编的形式,从而了解编译器替我们做了哪些事情,所谓的反汇编就是将编译好的程序(机器语言)又转换为汇编语言。学习汇编的目的是了解编译器的转换机制以及底层中数据的运算</strong><br>
+<br/><br>
+<br/></p>
+<h3 id="进制">进制:</h3>
+<p>​	在接触安全或者说是学习计算机技术之前,一想到计算机,就会觉得这门技术肯定和数学有着密切的关系,一看到与计算机相关的书籍/文章首先映入眼帘的必然是&quot;这进制那进制&quot;的术语。但书籍中描述的&quot;进制&quot;太过模糊,而且一上来就是各种进制之间的转换。借视频中老师的一句话&quot;任何进制的体系都是完美的,不需要彼此进行转换&quot;,老实说,之前也确是学习过进制,但到头来还是去硬性的记一些转换规律。直到看了海东老师对进制讲解的视频,受益匪浅。</p>
+<p>​	学会了进位就等于理解了进制,生活中常见的二进制,八进制,十六进制,规律就逢几进一。二进制逢二进一,八进制逢八进一,十六进制缝十六进一。</p>
+<h4 id="规律">规律:</h4>
+<p>​		<strong>N进制:由N个符号组成,缝N进一。</strong></p>
+<p>进制组成的符号不一定仅限于数字,这个规则可以自定义</p>
+<p>​	例如:d 3 4 5 9 2 l w</p>
+<p>可以设定有这八个符号,缝w进d,要灵活的理解&quot;进制&quot;</p>
+<p>依次数就是:d 3 4 5 9 2 l w dd d3 d4</p>
+<p>所谓进位就是当前位数达到了当前符号的最后一个符号时,需要向前进位。</p>
+<p>练习;</p>
+<pre><code>分别用二,八,十六进制表示十进制的1-15
+二进制:
+	1,10,11,100,101,110,111,1000,1001,1010,1011,1100,1101,1110,1111
+	
+八进制:
+	1,2,3,4,5,6,7,10,11,12,13,14,15,16,17
+	
+十六进制:
+	1,2,3,4,5,6,7,8,9,A,B,C,D,E,F
+</code></pre>
+<p>不同进制之间只是表现数字的形式发生了变化,但其表示的内容是不变的</p>
+<h3 id="进制的运算">进制的运算:</h3>
+<p>​	其它的教学在对进制进行讲解时一定会教进制之间的相互转换,但这是没有必要的,还是那句话&quot;任何进制的体系都是完美的,不需要进行转换&quot;,之所以教转换是因为,没有学会直接使用二进制进行数学运算,所以需要先将二进制的数转换为十进制才能进行计算。</p>
+<p>​	在对十进制的两个数进行相乘,相加等运算时,可以很快的得出答案,这是因为在脑海中有两张表,一张是加法表,一张是乘法表。其它进制进行运算不能马上得出答案是因为,在脑海中没有针对某个进制的这两张表,所以不能迅速的得出答案。在进行不同进制运算时就要制作针对这种进制的加法表或乘法表。</p>
+<p>​	不同进制之间运算的本质也是查询数</p>
+<p>八进制表示十进制1-25:</p>
+<p>​	1 2 3 4 5 6 7 10 11 12 13 14 15 16 17 20 21 22 23 24 25 26 27 30 31 32 33 34 35 36 37 40 41 42 43 44 45</p>
+<p>八进制加法表:</p>
+<table>
+<thead>
+<tr>
+<th>1+1 = 2</th>
+<th style="text-align:center">2+2=4</th>
+<th>3+3=6</th>
+<th>4+4=10</th>
+<th>5+5=12</th>
+<th>6+6=14</th>
+<th>7+7=16</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1+2 = 3</td>
+<td style="text-align:center">2+3=5</td>
+<td>3+4=7</td>
+<td>4+5=11</td>
+<td>5+6=13</td>
+<td>6+7=15</td>
+<td></td>
+</tr>
+<tr>
+<td>1+3 = 4</td>
+<td style="text-align:center">2+4=6</td>
+<td>3+5=10</td>
+<td>4+6=12</td>
+<td>5+7=14</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1+4 = 5</td>
+<td style="text-align:center">2+5=7</td>
+<td>3+6=11</td>
+<td>4+7=13</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1+5 = 6</td>
+<td style="text-align:center">2+6=10</td>
+<td>3+7=12</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1+6 = 7</td>
+<td style="text-align:center">2+7=11</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1+7 = 10</td>
+<td style="text-align:center"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>八进制乘法表:</p>
+<table>
+<thead>
+<tr>
+<th>1*1=1</th>
+<th>2*2=4</th>
+<th>3*3=11</th>
+<th>4*4=20</th>
+<th>5*5=31</th>
+<th>6*6=44</th>
+<th>7*7=61</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1*2=2</td>
+<td>2*3=6</td>
+<td>3*4=14</td>
+<td>4*5=24</td>
+<td>5*6=36</td>
+<td>6*7=52</td>
+<td></td>
+</tr>
+<tr>
+<td>1*3=3</td>
+<td>2*4=10</td>
+<td>3*5=17</td>
+<td>4*6=30</td>
+<td>5*7=43</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1*4=4</td>
+<td>2*5=12</td>
+<td>3*6=22</td>
+<td>4*7=34</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1*5=5</td>
+<td>2*6=14</td>
+<td>3*7=25</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1*6=6</td>
+<td>2*7=16</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1*7=7</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h4 id="进制运算练习">进制运算练习:</h4>
+<pre><code>加:               减:
+  277	             276
++ 333	           -  54 
+-------	        ---------
+  632				222
+  
+乘:               除:  
+  300			    234
+*  54             /    4
+--------        ----------
+ 1400                 47
+1700
+--------
+ 20400
+</code></pre>
+<h4 id="二进制的简写形式">二进制的简写形式:</h4>
+<p>​	以二进制形式查看计算机文件通常使用UltraEDIt/010EDItor等工具,计算机中都是以二进制的形式对数据进行存储,在使用这种工具打开一个文件(例如音频,exe,jpg)等文件时,看到的并不只是二进制数据,而是十六进制形式的数据,这是因为如果直接显示二进制数据的话就会显得异常杂乱,不利于数据的查看。所以在学习逆向时,许多工具中都常用十六进制对数据进行表示,而不是二进制。</p>
+<p>因此在二进制和十六进制之间存在一种对照关系</p>
+<pre><code>0001 0010 0011 0100 0101 0110 0111 1000 1001 1010 1011 1100 1101 1110 1111
+ 1    2    3     4    5    6    7    8   9    A     B    C   D     E    F 
+</code></pre>
+<p>一定要熟练的掌握这种十六进制&lt;----&gt;二进制的对照关系<br>
+<br/><br>
+<br/></p>
+<h3 id="数据宽度">数据宽度:</h3>
+<p>​	计算机存储数据是有宽度(范围限制)的,这是受硬件限制的,数据的存储是有范围的</p>
+<h4 id="常见的几个数据宽度">常见的几个数据宽度:</h4>
+<ul>
+<li>​	BIT(bit位)</li>
+<li>​    BYTE(字节):8bit位</li>
+<li>​    WORD(字): 16bit位</li>
+<li>​    DWORD(双字):32bit位<br>
+<br/><br>
+<br/></li>
+</ul>
+<h3 id="有符号数无符号数">有符号数/无符号数:</h3>
+<p>​	01010101表示什么?问这个问题的前提是给定一种编码规则,否则谁也回答不上来,所谓的编码规则就是解析方式,是按照有符号数的编码规则进行解析还是按照无符号数的编码规则进行解析。</p>
+<p>​	假设按照无符号数的编码规则进行解析,那这个数就是所表示无符号数的绝对值,如果是按照有符号数的方式进行解析则需要把第一位看作是符号位(0表示整数,1表示负数)。</p>
+<p>​	计算机中的数据以补码的形式进行存储。</p>
+<pre><code>原码: 反码第一位表示符号位,其余位为所表示数值的绝对值
+
+反码: 
+	正数:反码于原码一致
+	负数:在原码的基础上,符号位不变,其余位全部取反
+
+补码:
+	正数:补码与原码一致
+	负数:符号位不变,其余为全部取反后+1
+</code></pre>
+<p>原码/反码/补码针对的是有符号数<br>
+<br/></p>
+<h3 id="内存">内存:</h3>
+<p>​	这里的内存指的是操作系统的应用程序运行期间为其分配的4GB的虚拟地址空间,一块内存空间由一个对应的地址编号(例如0x00000000),因为内存是一段连续的存储空间(通常用位的十六进制数进行表示),数量实在太多,所以不能像通用寄存器一样用EAX之类的字母与其对照。一个内存地址代表一块内存空间,那一个内存地址所对应的内存空间宽度占8bit(1字节)。</p>
+<p>​	为什么操作系统在运行一个应用程序时分配4GB的虚拟地址空间?为什么是4GB?</p>
+<p>​	因为这是32位CPU的最大寻址范围,可以寻找的最大地址空间</p>
+<p>​	0x00000000 ----&gt; 00000000000000000000000000000000 ---&gt;最大地址:FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF+1=可以寻找的地址范围 = 4GB<br>
+<br/></p>
+<h3 id="寄存器">寄存器:</h3>
+<h4 id="通用寄存器">通用寄存器:</h4>
+<table>
+<thead>
+<tr>
+<th>32位</th>
+<th>16位</th>
+<th>8位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EAX</td>
+<td>AX</td>
+<td>AH</td>
+</tr>
+<tr>
+<td>ECX</td>
+<td>CX</td>
+<td>CH</td>
+</tr>
+<tr>
+<td>EDX</td>
+<td>DX</td>
+<td>DH</td>
+</tr>
+<tr>
+<td>EBX</td>
+<td>BX</td>
+<td>BH</td>
+</tr>
+<tr>
+<td>ESP</td>
+<td>SP</td>
+<td>AL</td>
+</tr>
+<tr>
+<td>EBP</td>
+<td>BP</td>
+<td>CL</td>
+</tr>
+<tr>
+<td>ESI</td>
+<td>SI</td>
+<td>DL</td>
+</tr>
+<tr>
+<td>EDI</td>
+<td>DI</td>
+<td>BL</td>
+</tr>
+</tbody>
+</table>
+<p>​	在DTdebug中通用寄存器只显示了八个32位的,那所列出的16,8位的寄存器呢?通用的16,8位寄存器实际上是在32位寄存器的基础上进行了拆分。</p>
+<p>​	例如AX(16位寄存器)就是EAX寄存器的低16位,CX(16位寄存器)就是ECX寄存器的低16位</p>
+<p>​	AH(代表AX寄存器的高八位),AL(代表AX寄存器的低八位),其它8位寄存器以此类推。16,8位寄存器实际是把32位寄存器拆分成了不同的段进行使用了。</p>
+<h4 id="efl标志寄存器">EFL(标志寄存器):</h4>
+<p>EFL是一个32位的寄存器,这个寄存器一般称作&quot;标志寄存器&quot;,其中的每一个bit位都代表着特殊的含义</p>
+<figure data-type="image" tabindex="1"><img src="https://Ra7n.github.io/post-images/1670061347777.png" alt="" loading="lazy"></figure>
+<table>
+<thead>
+<tr>
+<th>位(右-&gt;左下标)</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CF(0)</td>
+<td>算数运算结果在最高位发生进位或是错位将其置为1,反之为0(JCC指令常用),通常表示无符号整型运算的溢出情况</td>
+</tr>
+<tr>
+<td>PF(2)</td>
+<td>奇偶校验位。运算结果的最低有效字节包含偶数个1则PF位置为1,否则置0</td>
+</tr>
+<tr>
+<td>AF(4)</td>
+<td>运算结果下标为三的bit发生进位截尾时,AF位置1否则为0</td>
+</tr>
+<tr>
+<td>ZF(6)</td>
+<td>运算结果为0则置1,反之置0</td>
+</tr>
+<tr>
+<td>SF(7)</td>
+<td>该标志为有符号整型的最高有效位,通常表示一个数是正数还是负数</td>
+</tr>
+<tr>
+<td>DF(10)</td>
+<td>方向位,影响(MOVS/CMPS/SCAS/LODS/STOS等指令)(为0则MOVS指令执行后ESI,EDI的值会自增;为1则自减)</td>
+</tr>
+<tr>
+<td>OF(11)</td>
+<td>有符号数发生借位/错位等情况时置1反之置0,如果把一个数数看作有符号数,那它的最高位往后一位才是有效位。这个有效位溢出了则OF置为1反之置0。简单来说就是一个数的第二位发生了借位/错位置1。</td>
+</tr>
+<tr>
+<td><br/></td>
+<td></td>
+</tr>
+<tr>
+<td><br/></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="指令">指令:</h3>
+<h4 id="数据移动相关">数据移动相关:</h4>
+<h5 id="mov指令">MOV指令:</h5>
+<pre><code class="language-assembly"># 移动立即数到32位寄存器(8,16操作一致)
+MOV EAX,1
+MOV ECX,2
+MOV EDX,3
+MOV EBX,4
+MOV ESP,5
+MOV EBP,6
+MOV ESI,7
+MOV EDI,8
+
+# 移动一个寄存器中的数据到另一个寄存器
+MOV EAX,EBX # 移动EBX寄存器中的内容到EAX
+MOV EDI,EBP # 移动EBP寄存器中的内容到EDI
+
+#将寄存器中的数据移动到某一块内存中
+#前后的数据宽度也必须保持一致!
+MOV DWORD PTR DS:[0x32423444],EAX # 从0x32423444开始复制,复制4个字节数据
+MOV WORD PTR DS:[0x43452568],AX # 从0x43452568开始复制,复制2个字节数据
+MOV BYTE PTR DS:[0x35749768],al # 从0x35749768开始复制,复制一个字节数据
+
+#将内存中的值移动到某一个寄存器中
+MOV EAX,DWORD PTR DS:[0x36324578] # 从0x36324578开始复制,往后复制4个字节的数据到EAX
+MOV AX,WORD PTR DS:[0x34563535] # 从0x34563535开始复制,往后复制2个字节的数据到AX
+MOV al,BYTE PTR DS:[0x56574809] # 从0x56574809开始复制,往后复制1个字节数据到al中
+
+#内存地址的不同表示形式
+MOV EAX,DWORD PTR DS:[0x32343253] #立即数
+MOV EAX,DWORD PTR DS:[ECX] #寄存器表示,取取到寄存器中的值作为内存地址
+MOV EAX,DWORD PTR DS:[EBX+2] #寄存器中的值与立即数做运算
+MOV EAX,DWORD PTR DS:[ESI+EBP*{1,2,4,8}] #寄存器值加另一个寄存器值再乘一个数{1,2,4,8},只能是这四个数
+</code></pre>
+<p>注:</p>
+<p>​	MOV指令两边的数据宽度必须保持一致,也就是32位的寄存器只能把数据移动到另一个32位的寄存器中,以此类推</p>
+<p>​	移动立即数也需要两边宽度符合,一个8位寄存器最多移动0xFF(十六进制数)到里面寄存器中</p>
+<h5 id="movs指令">MOVS指令:</h5>
+<p>​	内存到内存之间的数据移动</p>
+<pre><code class="language-assembly">#左右两边操作数的宽度必须保持一致
+
+#标准写法
+MOVS DWORD PTR ES:[EDI],DWORD PTR DS:[ESI] #表示从ESI中存储的地址中复制数据到EDI中存储的地址
+MOVS WORD PTR ES:[EDI],WORD PTR DS:[ESI] #表示从ESI中存储的地址中复制数据到EDI中存储的地址
+MOVS BYTE PTR ES:[EDI],BYTE PTR DS:[ESI] #表示从ESI中存储的地址中复制数据到EDI中存储的地址
+
+# 在DTdebug或是其它调试工具中,使用MOVSB,MOVSW,MOVSD分别表示,复制BYTE大小数据,WORD大小数据,DWORD大小数据
+# 执行一次ESI,EDI会根据移动数据的大小自增或自减(具体根据DF标志位,0自增|1自减)
+</code></pre>
+<h5 id="stos指令">STOS指令:</h5>
+<pre><code class="language-assembly"># STOS指令用于内存复制,可以将EAX,AX,al寄存器中的值移动到EDI寄存器中的地址中
+STOR BYTE PTR ES:[EDI] # 将al中的值移动到EDI寄存器所存储的地址中
+STOS WORD PTR ES:[EDI] # 将AX中的值移动到EDI寄存器所存储的地址中
+STOS DWORD PTR ES:[EDI] # 将EAX中的值移动到EDI寄存器所存储的地址中
+
+# 在DTdebug或是其它调试工具中,使用STOSB,STOSW,STOSD分别表示,复制al,AX,EAX中的数据到EDI存储的地址中
+# 与MOVS一样,执行结束后EDI会根据DF标志位的情况自增或自减
+</code></pre>
+<h5 id="rep指令">REP指令:</h5>
+<p>​	repeat的简写,该指令根据ECX(计数器)中的值决定执行其所修饰语句的次数</p>
+<p>​	每执行一次ECX就会减1,直至ECX减为0为止</p>
+<pre><code class="language-assembly">MOV ECX,5 # 设置计数器为5
+REP STOS DWORD PTR ES:[EDI] # STOS执行一次ECX减1,直至ECX减为0执行结束
+</code></pre>
+<p><strong>常用于大片的内存复制</strong></p>
+<h4 id="运算相关">运算相关:</h4>
+<p><strong>运算结果保存到第一个操作数中</strong></p>
+<h5 id="add指令">ADD指令:</h5>
+<pre><code class="language-assembly">#两个操作数,可以是寄存器也可以是内存地址,前提是宽度必须一致
+ADD EAX,EBX
+ADD DWORD PTR DS:[0x3232423],EAX
+ADD AX,WORD PTR DS:[0x32423423]
+ADD BYTE PTR DS:[0x32435435],al
+</code></pre>
+<h5 id="sub指令">SUB指令:</h5>
+<pre><code class="language-assembly">#两个操作数,可以是寄存器也可以是内存地址,前提是宽度必须一致
+SUB EAX,EBX 
+SUB DWORD PTR DS:[0x3232423],EAX
+SUB AX,WORD PTR DS:[0x32423423]
+SUB BYTE PTR DS:[0x32435435],al
+</code></pre>
+<h5 id="and指令">AND指令:</h5>
+<pre><code class="language-assembly">#两个操作数,可以是寄存器也可以是内存地址,前提是宽度必须一致
+AND EAX,EBX 
+AND DWORD PTR DS:[0x3232423],EAX
+AND AX,WORD PTR DS:[0x32423423]
+AND BYTE PTR DS:[0x32435435],al
+</code></pre>
+<h5 id="or指令">OR指令:</h5>
+<pre><code class="language-assembly">#两个操作数,可以是寄存器也可以是内存地址,前提是宽度必须一致
+OR EAX,EBX 
+OR DWORD PTR DS:[0x3232423],EAX
+OR AX,WORD PTR DS:[0x32423423]
+OR BYTE PTR DS:[0x32435435],al
+</code></pre>
+<h5 id="xor指令">XOR指令:</h5>
+<pre><code class="language-assembly">#两个操作数,可以是寄存器也可以是内存地址,前提是宽度必须一致
+XOR EAX,EBX 
+XOR DWORD PTR DS:[0x3232423],EAX
+XOR AX,WORD PTR DS:[0x32423423]
+XOR BYTE PTR DS:[0x32435435],al
+</code></pre>
+<h5 id="not指令">NOT指令:</h5>
+<pre><code class="language-assembly">#两个操作数,可以是寄存器也可以是内存地址,前提是宽度必须一致
+#只有一个操作数,可以是内存或寄存器,不能是立即数
+NOT EAX
+NOT DWORD PTR DS:[0x43434565]
+</code></pre>
+<h5 id="cmp指令">CMP指令:</h5>
+<pre><code class="language-assembly">#相当于SUB指令,但是运算结果不会保存,只会影响标志寄存器,一般用来比较两个数是否相等,用两个数相减,结果为0则相等
+CMP EAX,EBX
+CMP EAX,100 # 寄存器只能放到第一个操作数
+
+</code></pre>
+<h5 id="test指令">TEST指令:</h5>
+<pre><code class="language-assembly"># 相当于AND指令,通常用于比较一个数是否等于0,与AND的区别是不保存执行结果
+TEST EAX,EAX
+</code></pre>
+<h4 id="堆栈操作">堆栈操作:</h4>
+<h5 id="push指令">PUSH指令:</h5>
+<pre><code class="language-assembly"># 压栈指令,将数据压入栈中,并且让ESP值+压入栈中数据宽度(单位/字节)。仅支持16,32位寄存器以及内存值立即数不限
+PUSH EAX
+PUSH AX
+PUSH DWORD PTR DS:[0x3124234]
+PUSH WORD PTR DS:[0x4353456]
+PUSH 0x11
+PUSH 423
+</code></pre>
+<figure data-type="image" tabindex="2"><img src="https://Ra7n.github.io/post-images/1670061327936.png" alt="" loading="lazy"></figure>
+<h5 id="pop指令">POP指令:</h5>
+<pre><code class="language-assembly"># 将栈顶值弹出到操作数寄存器或内存块中,并且ESP-寄存器或内存块数据宽度,仅支持16/32位寄存器或内存块
+POP EAX
+POP ECX
+POP EDX
+</code></pre>
+<figure data-type="image" tabindex="3"><img src="https://Ra7n.github.io/post-images/1670061318383.png" alt="" loading="lazy"></figure>
+<h4 id="修改eip寄存器指令">修改EIP寄存器指令:</h4>
+<p>​	EIP:EIP寄存器不属于通用寄存器,有特殊的用途。EIP中存储了CPU下一条执行命令的地址。不用使用MOV命令改变EIP的值,有两条命令专门用来修改EIP寄存器的值。</p>
+<h5 id="jmp">JMP:</h5>
+<pre><code class="language-assembly">#JMP 指令直接将EIP寄存器值修改为操作数值,只能使用32位寄存器/DWORD宽度的内存,因为EIP也是32位的寄存器,遵循宽度一致的原则
+JMP 0x31231231 #立即数
+JMP EAX #寄存器
+JMP DWORD PTR DS:[0x32423423] #内存
+</code></pre>
+<figure data-type="image" tabindex="4"><img src="https://Ra7n.github.io/post-images/1670061309067.png" alt="" loading="lazy"></figure>
+<h5 id="call">CALL:</h5>
+<pre><code class="language-assembly">#CALL指令用于修改EIP值,但不同于JMP,执行CALL指令时会将CALL指令下一行指令的地址压入栈中。
+#ESP-4|修改EIP
+CALL 0x43243242 #立即数
+CALL EAX #寄存器
+CALL DWORD PTR DS:[0x3213242] #内存
+</code></pre>
+<h5 id="附加">附加:</h5>
+<h6 id="ret指令">RET指令:</h6>
+<pre><code class="language-assembly">#RET指令
+#作用:将栈顶值放到EIP中且ESP+4
+RET
+</code></pre>
+<p><img src="https://Ra7n.github.io/post-images/1670061299506.png" alt="" loading="lazy"><br>
+<br/><br>
+<br/></p>
+<h4 id="jcc指令">JCC指令:</h4>
+<p>​	条件跳转指令的简称,会根据ELF标志位的值决定修不修改EIP</p>
+<p>​	<img src="https://Ra7n.github.io/post-images/1670061290639.png" alt="" loading="lazy"></p>
+<p>​																								--------<a href="https://blog.csdn.net/lm19770429/article/details/120850297?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522167005990016800184114701%2522%252C%2522scm%2522%253A%252220140713.130102334..%2522%257D&amp;request_id=167005990016800184114701&amp;biz_id=0&amp;utm_mEDIum=distribute.pc_search_result.none-task-blog-2~all~sobaiduend~default-2-120850297-null-null.142%5Ev67%5Econtrol,201%5Ev3%5Econtrol_2,213%5Ev2%5Et3_control1&amp;utm_term=JCC%E6%8C%87%E4%BB%A4&amp;spm=1018.2226.3001.4187">转自CSDN-点击跳转</a></p>
+<h3 id="常识">常识:</h3>
+<h4 id="数据的存储模式">数据的存储模式:</h4>
+<h5 id="小端存储小端序">小端存储(小端序):</h5>
+<p>​			数据低位在内存低位,数据高位在内存高位</p>
+<h5 id="大端存储大端序">大端存储(大端序):</h5>
+<p>​			数据低位在内存高位,数据高位在内存低位</p>
+<p>​			在arm平台(例如安卓)中常用大端的存储模式,在8086平台中常用小端的存储模式</p>
+<h4 id="堆栈">堆栈:</h4>
+<h5 id="堆栈定义">堆栈定义:</h5>
+<p>​		程序启动时操作系统会为程序分配4GB的虚拟空间,这4GB的虚拟空间不是随便就可以使用的,在使用之前还需要申请,堆栈属于内存的一部分,但是是一块比较特殊的内存,在程序启动的时候就由操作系统分配好了。无需程序员手动申请,所以在内存视图中也可以查看堆栈中的内容。</p>
+<p>​		堆栈的作用是在<strong>程序的运行过程中存储临时数据</strong>所使用的空间,程序运行过程中的所有重要数据都会在堆栈中体现,所以堆栈是程序的心脏。<br>
+<br/><br>
+<br/></p>
+<h4 id="技巧练习">技巧练习;</h4>
+<h5 id="fake-f8">Fake F8:</h5>
+<p>​	涉及到调试器原理:</p>
+<p>​	在调试器中有三个经常使用的功能,F7(单步步入)，F8(单步步过)，下断点</p>
+<p>​	这里讲一下这三个功能的大致原理</p>
+<ul>
+<li>
+<p>​	<strong>F7:单步步入,将ELF寄存器的TF位置为1,CPU就会进入单步执行模式</strong></p>
+</li>
+<li>
+<p>​	<strong>断点:将断点处值改为指令INT3(CD 03),CPU执行到INT3这个指令时就会停下来</strong></p>
+</li>
+<li>
+<p>​	<strong>F8:在执行普通指令时与F7没有区别,在执行CALL指令时会将CALL指令的下一行指令下上断点(改为INT3),所以F8好像是把CALL指令当成一行执行了。本质上是在返回的地址下断点。这样就会停在CALL调用结束后的位置。</strong></p>
+</li>
+</ul>
+<p>​	所谓的FakeF8是一种反调试的手段,所谓的反调试,就是不让破解者/攻击者可以轻易的调试软件。Fake是假/伪造的意思,FakeF8就是让调试器的F8补过功能失效。原理就是在CALL跳往的地方改变栈顶元素的值(此时的栈顶一定是CALL指令的下一行指令地址),如果改变了这个值,那调试器在CALL指令下一条指令下的断点就没有用了,这样RET指令执行时就会跳到其它地方。且这个地方没有断点,就会继续向下执行(从而导致程序跟飞)。</p>
+<p>​	这个技巧只能让F8失效却不能让F7失效,因为F7的原理是改变ELF的TF位,从而让CPU进入单步执行模式。而不是在CALL的下一行指令下断点。所以使用F7还是可以继续跟进程序的。</p>
+<h6 id="fakef8实例">FakeF8实例:</h6>
+<p>1.修改栈顶</p>
+<p>​       	<img src="https://Ra7n.github.io/post-images/1670061278244.png" alt="" loading="lazy"></p>
+<p>2.F8跟飞</p>
+<figure data-type="image" tabindex="5"><img src="https://Ra7n.github.io/post-images/1670061269821.png" alt="" loading="lazy"></figure>
+<h6 id="使用f7">使用F7:</h6>
+<h6 id="不受影响"><strong>不受影响</strong></h6>
+<h6 id=""><img src="https://Ra7n.github.io/post-images/1670061251563.png" alt="" loading="lazy"></h6>
+<h4 id="函数">函数:</h4>
+<p>​	一个需要经常被使用的功能我们可以封装成一个函数,这样就可以重复使用了。</p>
+<p>​	汇编语言中函数是一组特定指令的集合。</p>
+<p>​	可以通过JMP,CALL指令对函数进行调用。但由于CALL指令的特性所以一般使用CALL指令来对函数进行调用,CALL指令会将下一行语句的地址压入栈中,这便于函数执行完后回到原位。</p>
+<h5 id="参数">参数:</h5>
+<p>​	传递进函数中进行运算的数据称为参数,参数可以有多个。可以通过寄存器传参,也可以通过堆栈进行传参。</p>
+<h5 id="返回值">返回值:</h5>
+<p>​	返回值是函数的运算结果,返回值一般放到EAX寄存器中。返回值不是必须的。</p>
+<h5 id="练习">练习:</h5>
+<h6 id="寄存器传参">寄存器传参:</h6>
+<figure data-type="image" tabindex="6"><img src="https://Ra7n.github.io/post-images/1670061215009.png" alt="" loading="lazy"></figure>
+<h6 id="堆栈传参">堆栈传参:</h6>
+<figure data-type="image" tabindex="7"><img src="https://Ra7n.github.io/post-images/1670061208642.png" alt="" loading="lazy"></figure>
+<p>​			严格来说在返回之前需要平衡堆栈,这里作为演示,不纠结这些问题。</p>
+<p>​</p>
+<h4 id="堆栈平衡">堆栈平衡:</h4>
+<p>​	堆栈平衡指的是在函数的调用过程中,函数调用前与函数调用后的堆栈状态保持一致,如果堆栈不平衡,程序肯定会崩溃,垃圾数据得不到清理,堆栈也会溢出。</p>
+<h5 id="需要进行堆栈平衡的两种情况">需要进行堆栈平衡的两种情况:</h5>
+<h6 id="情况一">情况一:</h6>
+<p>​	发生在函数(指令集)的执行过程中，在函数结束后要将堆栈恢复成函数开始时的样子。因为函数执行的过程中可能会对堆栈进行操作例如PUSH压栈，这种操作就会导致ret返回函数下一条指令的位置出现异常。因为CALL指令会将下一条指令地址压栈，如果没有恢复最初调用时的状态后果是很严重的。整个程序的执行流程都会被打乱,RET返回到一个未知的位置。</p>
+<h6 id="情况二">情况二:</h6>
+<p>​	在调用需要参数的函数时,在程序调用结束时,也需要平衡参数传递所带来的堆栈不平衡,如果不平衡堆栈将对主程序的执行带来影响。传递进函数的参数在函数外部没有任何意义,应及时清理。因为堆栈中的内容可能是主程序要用的,如果返回时改变了堆栈的状态而没有恢复就会导致程序逻辑出现问题。</p>
+<h5 id="平栈方式">平栈方式:</h5>
+<h6 id="外平栈">外平栈:</h6>
+<pre><code class="language-assembly">PUSH 1
+PUSH 2
+PUSH 3
+CALL 0x013214324
+ADD ESP+C
+
+0x013214324:
+MOV EAX,0
+ADD EAX,DWORD PTR DS:[ESP-C]
+ADD EAX,DWORD PTR DS:[ESP-8]
+ADD EAX,DWORD PTR DS:[ESP-4]
+RET
+</code></pre>
+<h6 id="内平栈">内平栈:</h6>
+<pre><code class="language-assembly">PUSH 1
+PUSH 2
+PUSH 3
+CALL 0x013214324
+
+0x013214324:
+MOV EAX,0
+ADD EAX,DWORD PTR DS:[ESP-C]
+ADD EAX,DWORD PTR DS:[ESP-8]
+ADD EAX,DWORD PTR DS:[ESP-4]
+RET C
+</code></pre>
+<pre><code>**在RET指令后加立即数,相当于做两个动作,一是将栈顶弹如EIP寄存器中,二是让ESP+立即数。从而做到内平栈。**
+</code></pre>
+<p>​	将平衡堆栈的动作写在函数外称为&quot;内平栈&quot;,将平栈动作写的函数内称为&quot;内平栈&quot;</p>
+<h5 id="寻址方式">寻址方式:</h5>
+<h6 id="esp寻址">ESP寻址:</h6>
+<p>​	ESP是栈指针寄存器，记录了当前堆栈的状态，是当前堆栈的栈顶地址。会随着堆栈的变化而变化。</p>
+<p>​	通常情况下在函数调用前需要传递参数，将参数PUSH进栈中，CALL指令的特性是会将其下一行指令的地址压入堆栈中。如果是固定不变的情况下就可以通过ESP+4，+8，+C的方式来寻找参数。</p>
+<pre><code>但是这种寻址方式存在弊端，在调用函数后，如果还需要对堆栈进行操作或是函数中需要使用寄存器,就需要保存当前寄存器的原始状态,就需要使用堆栈进行状态保存,此时便会对堆栈造成影响，那ESP的值就会随着压栈不断发生变化。如果继续通过ESP寄存器寻址,就要根据函数内对堆栈的影响情况对寻址偏移量进行修正。ESP寻址在有复杂运算的情况下,就会变得不稳定,需要不断修正函数中对堆栈影响所导致的偏移量增长才能正确寻址。
+</code></pre>
+<h6 id="ebp寻址">EBP寻址:</h6>
+<p>​	ESP寻址存在的问题是ESP会随着堆栈的变化而变化，如果在函数中还要对堆栈进行造作,那么在后续通过ESP寻址的过程中就要不断的修正因为堆栈操作所导致的偏移量增长,所以在使用ESP进行参数寻址时需要不断进行修正,这样才能保证寻址的正确性。</p>
+<p>​	所以一般会采用EBP作为寻址方式。</p>
+<p>​	EBP寻址的流程原理:</p>
+<p>​		在调用函数后,首先将EBP的原值压入栈中(后续EBP的值可能还有用途),然后再将ESP寄存器的值复制到EBP中(EBP中存储的地址值正是EBP的原值),此时EBP=ESP。再对ESP寄存器进行提升(add ESP+10)提升的这部分区域就是函数的局部变量区。这相当于在堆栈中再划分出一块小的堆栈。这样即使当前函数对堆栈造成了影响也不会影响使用EBP进行寻址。EBP本身的位置是EBP寄存器在函数调用前的值,EBP+4是CALL指令的下一行指令的地址值,EBP+8开始属于传递到函数的参数部分。</p>
+<p>​	在函数运行结束时,会先将EBP的值赋给ESP,让ESP恢复原位。再POP EBP恢复EBP在函数调用前的原值。随后再平衡堆栈+返回调用位置。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Crack基本使用(高效弱口令爆破-工具分享)]]></title>
+        <id>https://Ra7n.github.io/post/crack/</id>
+        <link href="https://Ra7n.github.io/post/crack/">
+        </link>
+        <updated>2022-12-02T13:43:05.000Z</updated>
+        <content type="html"><![CDATA[<pre><code>   ______                __  
+  / ____/________ ______/ /__
+ / /   / ___/ __ `/ ___/ //_/
+/ /___/ /  / /_/ / /__/ ,&lt;   
+\____/_/   \__,_/\___/_/|_|  
+</code></pre>
+<ul>
+<li>项目地址:https://github.com/niudaii/crack</li>
+<li>作者:niudaii</li>
+<li>用途:支持多种协议的弱口令检测&amp;爆破工具</li>
+<li>开发语言:Go</li>
+</ul>
+<h3 id="支持协议">支持协议:</h3>
+<ul>
+<li>ftp</li>
+<li>ssh</li>
+<li>wmi</li>
+<li>wmihash</li>
+<li>smb</li>
+<li>msssql</li>
+<li>oracle</li>
+<li>mysql</li>
+<li>rdp</li>
+<li>postgres</li>
+<li>redis</li>
+<li>memcached</li>
+<li>mongodb</li>
+</ul>
+<h3 id="使用">使用:</h3>
+<pre><code class="language-SHELL">Usage:
+  ./crack + [flags]
+
+Flags:
+INPUT(输入):
+   -i &amp; -input [string]       # 输入测试目标(例子: -i '127.0.0.1:3306', -i '127.0.0.1:3307|mysql')
+   -f &amp; -input-file [string]  # 批量爆破,指定目标文件(例子: -f 'xxx.txt')
+   -m &amp; -module [string]      # 选择一个模块 crack(ftp,ssh,wmi,mssql,oracle,mysql,rdp,postgres,redis,memcached,mongodb) (default &quot;all&quot;)
+   -user [string]             # 指定用户名(例子: -user 'admin,root')
+   -pass [string]             # 指定密码(例子: -pass 'admin,root')
+   -user-file [string]        # 指定用户名字典(例子: -user-file 'user.txt')
+   -pass-file [string]        # 指定密码字典(例子: -pass-file 'pass.txt')
+
+CONFIG:
+   -threads [int]             # 指定线程数量 (默认值 1)
+   -timeout [int]             # 指定超时时间 (默认值 10)
+   -delay [int]    			 # 指定请求之间的间隙时间,单位为秒/s(禁止指定0)
+   -crack-all    crack all user:pass
+
+OUTPUT:
+   -o &amp; -output [string]  	  # 输出执行结果到指定文件 (默认值 &quot;crack.txt&quot;)
+   -nc &amp; -no-color      	  # 输出内容不显示颜色
+
+DEBUG:
+   -silent                    # 在输出中只显示结果 
+   -debug                     # 显示调试输出,查看详细的执行信息
+</code></pre>
+<h3 id="演示">演示:</h3>
+<p>​	<strong>尝试爆破本地ssh,mysql服务,使用的均为默认内置字典,就九十多条数据,可以自定义指定字典哦</strong></p>
+<h4 id="mysql">Mysql:</h4>
+<figure data-type="image" tabindex="1"><img src="https://Ra7n.github.io/post-images/1669990335139.png" alt="" loading="lazy"></figure>
+<h4 id="更改mysql密码后采用指定字典爆破">更改Mysql密码后采用指定字典爆破:</h4>
+<p>​	Golang开发效率很快,1000条数据大概2秒,真实攻防环境中可以适当调整线程数以及请求间隙,这里指定的是30(略快)</p>
+<figure data-type="image" tabindex="2"><img src="https://Ra7n.github.io/post-images/1669990808149.png" alt="" loading="lazy"></figure>
+<h4 id="ssh">SSH:</h4>
+<p><strong>以下指定了不同用户名进行爆破</strong></p>
+<figure data-type="image" tabindex="3"><img src="https://Ra7n.github.io/post-images/1669990813626.png" alt="" loading="lazy"></figure>
+<p>注意:</p>
+<p>​	请多多支持工具作者,这是一款轻量级且强悍的弱口令检测工具,主要针对(ssh,rdp,数据库等多种协议的爆破)</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Httpx基本使用(主机探测-工具分享-中文手册)]]></title>
+        <id>https://Ra7n.github.io/post/Httpx-ch-Doc/</id>
+        <link href="https://Ra7n.github.io/post/Httpx-ch-Doc/">
+        </link>
+        <updated>2022-12-01T12:29:01.000Z</updated>
+        <content type="html"><![CDATA[<pre><code>    __  ____  __            
+   / / / / /_/ /_____  _  __
+  / /_/ / __/ __/ __ \| |/_/
+ / __  / /_/ /_/ /_/ /&gt;  &lt;  
+/_/ /_/\__/\__/ .___/_/|_|  
+             /_/
+</code></pre>
+<ul>
+<li>项目地址:https://github.com/projectdiscovery/httpx</li>
+<li>作者:ProjectDiscovery</li>
+<li>用途:基于http协议的主机探测分析工具</li>
+<li>开发语言:Go</li>
+</ul>
+<h3 id="支持的探测信息">支持的探测信息:</h3>
+<figure data-type="image" tabindex="1"><img src="https://Ra7n.github.io/post-images/1669898089191.png" alt="" loading="lazy"></figure>
+<h3 id="使用">使用:</h3>
+<h4 id="获取帮助信息">获取帮助信息:</h4>
+<pre><code class="language-shell">./Httpx -h # 输出参数说明
+</code></pre>
+<h4 id="参数说明">参数说明:</h4>
+<pre><code class="language-shell">Usage:
+  ./httpx + [flags]
+  
+Flags:
+	对响应内容的操作:
+		Input(输入):
+    		-l &amp; -list (string)      # 指定需要探测的主体(指定存储探测主机的文件,例如host.txt)
+    		-rr &amp; -request (string)  # 指定包含原始请求的文件
+    		-u &amp; -target (string[])  # 直接指定域名/主机名/IP地址进行探测
+    	
+    	PROBES(探测内容):
+    		-sc &amp; -status-code     # 显示响应状态码
+   			-cl &amp; -content-length  # 显示响应内容长度
+   			-ct &amp; -content-type    # 显示响应内容类型
+   			-location              # 显示响应重定向位置
+   			-favicon               # 显示favoic.ioc文件的hash值
+   			-hash (string)         # 显示响应体哈希(支持:md5, mmh3, simhash, sha1, sha256, sha512)
+   			-jarm                  # 显示有害指纹散列
+   			-rt &amp; -response-time   # 显示响应时间
+   			-lc &amp; -line-count      # 显示响应体行数
+   			-wc &amp; -word-count      # 显示响应体字数
+   			-title                 # 显示页面标题
+   			-server &amp; -web-server  # 显示服务器名称
+   			-td &amp; -tech-detect     # 基于wappalyzer数据集分析站点使用的技术
+   			-method                # 显示HTTP请求方法
+   			-websocket             # 使用websocket显示服务器
+   			-ip                    # 显示主机IP
+   			-cname                 # 显示主机CNAME
+   			-asn                   # 显示主机asn信息
+   			-cdn                   # 显示使用的CDN信息
+   			-probe                 # 显示探针状态(探测成功与否)
+    
+		MATCHERS(匹配器):
+			-mc &amp; -match-code (string)           # 根据指定的状态码匹配响应内容(-mc 200, 302)
+   			-ml &amp; -match-length (string)         # 根据指定的内容长度匹配响应内容(-ml 100,102)
+   			-mlc &amp; -match-line-count (string)    # 根据指定的行数匹配响应内容(-mlc 423,532)
+   			-mwc &amp; -match-word-count (string)    # 将响应正文内容与指定的字数匹配(-mwc 43,55)
+   			-mfc &amp; -match-favicon (string[])     # 用指定的图标哈希匹配响应(-mfc 1494302000)
+   			-ms &amp; -match-string (string)         # 根据指定的字符串匹配响应内容(-ms admin)
+   			-mr &amp; -match-regex (string)          # 根据正则表达式匹配响应内容
+   			-mcdn &amp; -match-cdn (string[])        # 匹配主机与指定的CDN提供商(支持的厂商fastly, incapsula, oracle, google, azure, cloudflare, cloudfront, sucuri, leaseweb, akamai) 大都是国外的
+   			-mrt &amp; -match-response-time (string) # 根据指定的时间对内容响应的时间进行比较匹配,以秒为单位
+   			-mdc &amp; -match-condition (string)     # 用DSL表达式条件匹配响应
+   	
+   		EXTRACTOR(提取器):
+   			-er &amp; -extract-regex (string[])   	 # 使用正则表达式匹配响应内容提取并返回
+   			-ep &amp; -extract-preset (string[])  	 # 显示预定义正则表达式匹配的响应内容(url, ipv4，邮件)
+   		
+   		FILTERS(过滤器):
+   			-fc &amp; -filter-code (string)            # 使用指定的状态代码筛选响应(-fc 403,401)
+   			-fl &amp; -filter-length (string)          # 使用指定的内容长度筛选响应(-fl 23,33)
+   			-flc &amp; -filter-line-count (string)     # 使用指定的行数筛选响应(-flc 423,532)
+   			-fwc &amp; -filter-word-count (string)     # 使用指定的字数筛选响应(-fwc 423,532)
+   			-ffc &amp; -filter-favicon (string)        # 使用指定的favicon图标图片散列(hash)筛选响应(-mfc 1494302000)
+   			-fs &amp; -filter-string (string)          # 使用指定的字符串过滤响应
+   			-fe &amp; -filter-regex (string)           # 使用指定的正则表达式筛选响应(-fe admin)
+   			-fcdn &amp; -filter-cdn (string[])         # 使用指定的CDN厂商对响应进行筛选 (fastly, incapsula, oracle, google, azure, cloudflare, cloudfront, sucuri, leaseweb, akamai)
+   			-frt &amp; -filter-response-time (string)  # 指定响应具体的响应时间进行筛选
+   			-fdc &amp; -filter-condition (string)      # 用DSL表达式条件筛选响应
+   	
+   	对Httpx工具的操作/对请求的定制:
+   		RATE-LIMIT(限速/对并发量的限制):
+   	   		-t &amp; -threads (int)                # 使用的线程数(默认为50)
+   	   		-rl &amp; -rate-limit (int)            # 每秒发送的最大请求数(默认为150)
+   	   		-rlm &amp; -rate-limit-minute (int)    # 每分钟发送的最大请求数
+   	   		
+   	   	MISCELLANEOUS(杂项/其它):
+   	   	    -pa &amp; -probe-all-ips        # 探测与同一主机相关联的所有ip
+   	   	    -p &amp; -ports (string[])      # 探测指定的端口(nmap语法:例如http: 1,2 - 10,11, https:80)
+   	   	    -path (string)              # 探测的路径或路径列表(逗号分隔，文件)
+   	   	    -tls-probe                  # 在提取的TLS域上发送http探测(dns_name)
+   	   	    -csp-probe                  # 在提取的CSP域上发送http探测
+   	   	    -tls-grab                   # 执行TLS(SSL)数据抓取
+   	   	    -pipeline                   # 探测和显示服务器支持HTTP1.1管道
+   	   	    -http2                      # 探测和显示服务器支持HTTP2
+   	   	    -vhost                      # 探测和显示服务器支持VHOST
+   	   	    -ldv &amp; -list-dsl-variables  # 列出支持DSL匹配器/过滤器的json输出字段键名
+   	   	   
+   	   	OUTPUT(输出):
+   	   	    -o &amp; -output (string)             # 指定文件执行输出结果
+   	   	    -sr &amp; -store-response             # 将HTTP响应存储到输出目录
+   	   	    -srd &amp; -store-response-dir (string)  # 将HTTP响应存储到自定义目录
+   	   	    -csv                              # 保存CSV格式的输出信息
+   	   	    -json                             # 以JSONL (ines)格式存储输出
+   	   	    -irr &amp; -include-response          # 在JSON输出中包含http请求/响应(仅-json)
+   	   	    -include-chain                    # 在JSON输出中包含重定向http链(仅-json)
+   	   	    -store-chain                      # 在响应中包含HTTP重定向链(仅-sr)
+   	   	   
+   	   	CONFIGURATIONS(配置):
+   	   	    -r &amp; -resolvers (string[])        # 自定义解析器列表(文件或逗号分隔)
+   	   	    -allow (string[])                 # 允许处理的IP/CIDR列表(文件或逗号分隔)
+   	   	    -deny (string[])                  # 拒绝处理IP/CIDR列表(文件或逗号分隔)
+   	   	    -sni &amp; -sni-name (string)         # 自定义TLS SNI名称
+   	   	    -random-agent                     # 启用随机用户代理使用(默认为true)
+   	   	    -H &amp; -header (string[])           # 自定义与请求一起发送的HTTP报头
+   	   	    -http-proxy &amp; -proxy (string)     # 要使用的HTTP代理(例如http://127.0.0.1:8080)
+   	   	    -unsafe                           # 发送原始请求跳过golang规范化
+   	   	    -resume                           # 使用Resume .cfg扫描简历
+   	   	    -fr &amp; -follow-redirects           # 遵循HTTP重定向
+   	   	    -maxr &amp; -max-redirects (int)      # 每个主机的最大重定向数量(默认为10)
+   	   	    -fhr &amp; -follow-host-redirects     # 跟踪同一主机上的重定向
+   	   	    -vhost-input                      # 获取一个vhost列表作为输入
+   	   	    -x (string)                       # 请求方法探测，使用'all'来探测所有HTTP方法
+            -body (string)                    # 指定POST请求正文部分
+   	   	    -s &amp; -stream                      # 流模式-开始细化输入目标而不排序
+   	   	    -sd &amp; -skip-dedupe                # 禁用重复数据删除输入项(仅用于流模式)
+   	   	    -ldp &amp; -leave-default-ports       #在主机头中保留默认的http/https端口。http://host:80 (eg. http://host:80 - https//host:443)
+   	   	   
+   	   	DEBUG(调试):
+   	   	   -health-check &amp; -hc       # 运行诊断检查
+   	   	   -debug                    # 在cli中显示请求/响应内容
+   	   	   -debug-req                # 在cli中显示请求内容
+   	   	   -debug-resp               # 在cli中显示响应内容
+   	   	   -version                  # 显示HTTPX版本
+   	   	   -stats                    # 显示扫描统计信息
+   	   	   -profile-mem (string)     # 可选的HTTPX内存配置文件转储文件
+   	   	   -silent                   # 静默模式
+   	   	   -v &amp; -verbose             # 详细模式
+   	   	   -si &amp; -stats-interval (int)  # 显示统计数据更新之间等待的秒数(默认值:5)
+   	   	   -nc &amp; -no-color              # 禁用cli输出中的颜色
+   	   	   
+   	   	OPTIMIZATIONS(优化):
+   	   	   -nf &amp; -no-fallback                  # 显示探测的协议(HTTPS和HTTP)
+           -nfs &amp; -no-fallback-scheme          # 在输入中指定协议方案的探测
+           -maxhr &amp; -max-host-error (int)      # 每台主机在跳过剩余路径前的最大错误数/秒(默认30秒)
+           -ec &amp; -exclude-cdn                  # 跳过CDNS的全端口扫描(只检查80,443)
+           -retries (int)                      # 重试次数
+           -timeout (int)                      # 超时时间(以秒为单位)(默认为5)
+           -rsts &amp; -response-size-to-save (int) # 以字节为单位保存的最大响应大小(默认为2147483647)
+           -rstr &amp; -response-size-to-read (int) # 以字节为单位读取的最大响应大小(默认2147483647)
+   
+</code></pre>
+<p>使用范例:</p>
+<pre><code class="language-shell">./httpx -l site.txt -title -sc -probe -ip # -l[指定目标集合文件] -title[输出站点标题]  -sc[输出状态码] -probe[输出探测成功与否] -ip[输出IP信息]
+</code></pre>
+<h3 id="使用细节">使用细节:</h3>
+<ul>
+<li>默认情况下，httpx只在HTTPS不可达时检查HTTPS探测并回退到HTTP</li>
+<li>对于打印HTTP/HTTPS结果，可以使用no-fallback标志</li>
+<li>可以定义端口的自定义方案，例如-ports http:443, http:80, https:8443</li>
+<li>Favicon、vhost、http2、pipeline、ports、csp-probe、tls-probe和path是具有不同探针的唯一标志</li>
+<li>对于特定的用例应该使用唯一的标志，而不是在其他探测中默认运行它们</li>
+<li>当使用json标志时，所有信息(默认探测)都包含在json输出中</li>
+<li>自定义解析器支持多种协议(dohltcpludp)的协议:解析器:端口的形式(如udp:127.0.0.1:53)</li>
+<li>无效的自定义解析器/文件将被忽略</li>
+</ul>
+<h3 id="结语">结语:</h3>
+<p><strong>很有用的一款工具!!!</strong><br/><br>
+<strong>做完信息收集以后可以对收集到的站点进行一波筛选,提升工作效率! 大家多多支持工具的作者喔!!</strong><br/></p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Vegeta-[ShellcodeLoader]-自研]]></title>
+        <id>https://Ra7n.github.io/post/vegeta-shellcodeloder/</id>
+        <link href="https://Ra7n.github.io/post/vegeta-shellcodeloder/">
+        </link>
+        <updated>2022-12-01T06:51:57.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="vegetav10">Vegeta(v1.0)</h2>
+<pre><code> _    __                __       
+| |  / /__  ____ ____  / /_____ _
+| | / / _ \/ __ '/ _ \/ __/ __ '/
+| |/ /  __/ /_/ /  __/ /_/ /_/ / 
+|___/\___/\__, /\___/\__/\__,_/  
+         /____/   
+         	 -----Vegeta-ShellCode加载器
+			-----基于Go语言,腾讯云COS存储桶
+</code></pre>
+<h3 id="目录结构">目录结构:</h3>
+<pre><code>Vegeta
+	-Options
+		存放配置文件
+	-output
+		基于final.go文件生成木马
+	-Raw
+		存放Metasploit,CobaltStrike,Havoc等C2生成的Raw格式ShellCode
+	-Source
+		程序的实现,加载方式,加密方式,以及对存储桶的操作方法
+</code></pre>
+<h3 id="使用">使用:</h3>
+<h4 id="编译运行">编译&amp;运行:</h4>
+<pre><code>1.go build Vegeta.go //生成二进制文件
+2.go run Vegeta.go //直接运行
+</code></pre>
+<h4 id="配置文件">配置文件:</h4>
+<pre><code>配置文件路径:./Options
+	-BucketInfo.json //存储桶信息
+		BUCKET : 存储桶地址
+		
+	-CreateBucket.json //新建存储桶时的配置信息
+		BUCKET_NAME : 存储桶名称
+		BUCKET_TYPE :  存储桶类型
+		REGION : 存储桶所在城市
+		
+	-UserInfo.json //腾讯云账号信息,shellcode相关信息
+		APPID : 腾讯云APPID
+		SECRETID :  腾讯云SECRETID
+		SECRETKEY : 腾讯云SECRETKEY
+		RAW_FILE_NAME : C2生成的Raw格式文件名
+		SLEEP_SECOND : 睡眠时间
+				加载器启动后对Shellcode进行解密加载的间隔时间,设置这个时间有助于逃避杀软对内存的扫描
+</code></pre>
+<h4 id="参数">参数:</h4>
+<pre><code>-t
+	1 //创建存储桶
+	需要配置./Options/CreateBucket.json文件
+	
+	2 //生成马子
+	需要配置./Options/BucketInfo.json,./Options/UserInfo.json文件
+</code></pre>
+<br/>
+<h3 id="bypass">Bypass</h3>
+<ul>
+<li>3**</li>
+<li>huo****</li>
+<li>W*</li>
+</ul>
+<p>VT：6/72<br/><br/></p>
+<h3 id="注意">注意:</h3>
+<p>​	特别鸣谢Tide安全团队提供的Go语言加密包</p>
+<p>​	https://github.com/TideSec/GoBypassAV/tree/main/Encryption/XOR_code<br>
+<br/></p>
+<p><strong>此项目,暂时没有发布在Github<br/>有时间会在B站讲一下具体实现</strong><br>
+<img src="https://Ra7n.github.io/post-images/1669899410406.png" alt="" loading="lazy"></p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[74CMS模板注入漏洞分析]]></title>
+        <id>https://Ra7n.github.io/post/74cms-SSTI-analysis/</id>
+        <link href="https://Ra7n.github.io/post/74cms-SSTI-analysis/">
+        </link>
+        <updated>2022-12-01T05:33:37.000Z</updated>
+        <content type="html"><![CDATA[<p><img src="https://Ra7n.github.io/post-images/1669875630028.png" alt="" loading="lazy">### 入口文件:</p>
+<p>惯例,先来看一下入口文件</p>
+<p>这个cms是基于thinkPHP3.2.3进行开发的入口文件流程如下图所示</p>
+<p>就不展开讲了<br>
+<img src="https://Ra7n.github.io/post-images/1669873064904.png" alt="" loading="lazy"></p>
+<h3 id="漏洞触发链">漏洞触发链:</h3>
+<p>出现在config控制器的edit()函数中,该函数中调用了\Application\Common\Controller\BackendController.class.php下的update_config()函数将可控变量数组转换为字符串形式写入到Conf/url.php文件中从而触发漏洞。</p>
+<figure data-type="image" tabindex="1"><img src="https://Ra7n.github.io/post-images/1669873069189.png" alt="" loading="lazy"></figure>
+<p>代码形式的具体流程入下图所示:</p>
+<figure data-type="image" tabindex="2"><img src="https://Ra7n.github.io/post-images/1669873074086.png" alt="" loading="lazy"></figure>
+<h4 id="处理site_name参数">处理site_name参数</h4>
+<p>    进入edit()方法首先会调用方法I()获取site_domain参数的值,向下会对参数值进行处理,例如去除http/s协议前缀,最终将处理后的结果以&quot;.&quot;符号进行分割,转换为数组,再用array_slice()函数,切割分割字符串后生成的数组,取数组中后两个值生成新数组,也就是array(' ',phpinfo().'/ ','com')数组的最终形式。最后调用implode()函数以'.'符号作为连接符号拼接数组中的各元素,形成最终的payload: <strong>.',phpinfo(),'/.com</strong>*,payload会赋值给$config的两个不同键。</p>
+<h6 id="payload的变化过程详细">payload的变化过程(详细):</h6>
+<figure data-type="image" tabindex="3"><img src="https://Ra7n.github.io/post-images/1669873079157.png" alt="" loading="lazy"></figure>
+<h4 id="写入confurlphp文件">写入/Conf/url.php文件:</h4>
+<p>到了最关键的点,<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>c</mi><mi>o</mi><mi>n</mi><mi>f</mi><mi>i</mi><mi>g</mi><mi mathvariant="normal">数</mi><mi mathvariant="normal">组</mi><mi mathvariant="normal">被</mi><mi mathvariant="normal">传</mi><mi mathvariant="normal">递</mi><mi mathvariant="normal">到</mi><mi>u</mi><mi>p</mi><mi>d</mi><mi>a</mi><mi>t</mi><msub><mi>e</mi><mi>c</mi></msub><mi>o</mi><mi>n</mi><mi>f</mi><mi>i</mi><mi>g</mi><mo>(</mo><mo>)</mo><mi mathvariant="normal">函</mi><mi mathvariant="normal">数</mi><mi mathvariant="normal">中</mi><mo separator="true">,</mo><mi mathvariant="normal">该</mi><mi mathvariant="normal">函</mi><mi mathvariant="normal">数</mi><mi mathvariant="normal">需</mi><mi mathvariant="normal">传</mi><mi mathvariant="normal">递</mi><mi mathvariant="normal">两</mi><mi mathvariant="normal">个</mi><mi mathvariant="normal">参</mi><mi mathvariant="normal">数</mi><mo separator="true">,</mo><mi mathvariant="normal">第</mi><mi mathvariant="normal">一</mi><mi mathvariant="normal">个</mi><mi mathvariant="normal">参</mi><mi mathvariant="normal">数</mi><mi mathvariant="normal">传</mi><mi mathvariant="normal">递</mi><mi mathvariant="normal">的</mi><mi mathvariant="normal">是</mi></mrow><annotation encoding="application/x-tex">config数组被传递到update_config()函数中,该函数需传递两个参数,第一个参数传递的是</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">c</span><span class="mord mathdefault">o</span><span class="mord mathdefault">n</span><span class="mord mathdefault" style="margin-right:0.10764em;">f</span><span class="mord mathdefault">i</span><span class="mord mathdefault" style="margin-right:0.03588em;">g</span><span class="mord cjk_fallback">数</span><span class="mord cjk_fallback">组</span><span class="mord cjk_fallback">被</span><span class="mord cjk_fallback">传</span><span class="mord cjk_fallback">递</span><span class="mord cjk_fallback">到</span><span class="mord mathdefault">u</span><span class="mord mathdefault">p</span><span class="mord mathdefault">d</span><span class="mord mathdefault">a</span><span class="mord mathdefault">t</span><span class="mord"><span class="mord mathdefault">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">c</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord mathdefault">o</span><span class="mord mathdefault">n</span><span class="mord mathdefault" style="margin-right:0.10764em;">f</span><span class="mord mathdefault">i</span><span class="mord mathdefault" style="margin-right:0.03588em;">g</span><span class="mopen">(</span><span class="mclose">)</span><span class="mord cjk_fallback">函</span><span class="mord cjk_fallback">数</span><span class="mord cjk_fallback">中</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">该</span><span class="mord cjk_fallback">函</span><span class="mord cjk_fallback">数</span><span class="mord cjk_fallback">需</span><span class="mord cjk_fallback">传</span><span class="mord cjk_fallback">递</span><span class="mord cjk_fallback">两</span><span class="mord cjk_fallback">个</span><span class="mord cjk_fallback">参</span><span class="mord cjk_fallback">数</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">第</span><span class="mord cjk_fallback">一</span><span class="mord cjk_fallback">个</span><span class="mord cjk_fallback">参</span><span class="mord cjk_fallback">数</span><span class="mord cjk_fallback">传</span><span class="mord cjk_fallback">递</span><span class="mord cjk_fallback">的</span><span class="mord cjk_fallback">是</span></span></span></span>config数组,第二个参数是写死的固定的路径+配置文件名(/Conf/url.php),该函数将传递进来的第一个参数转换为其字符串的表示形式,再将其写入到第二个参数的文件之中。因为被转换的数组中的键值是可控的,再精心的构造payloda使payload逃逸出字符串中,从而达到了模板注入恶意代码的目的。</p>
+<figure data-type="image" tabindex="4"><img src="https://Ra7n.github.io/post-images/1669873083501.png" alt="" loading="lazy"></figure>
+<p>很多人觉得payload很奇怪,为什么会有.',之类的特殊符号,其实这些符号就是为了使php代码逃逸出字符串,使其成为独立存在的代码。,此配置文件在初始化cms时会自动加载,所以在注入成功后无论访问任何页面,看到的都是phpinfo()的信息</p>
+<p><img src="https://Ra7n.github.io/post-images/1669873087783.png" alt="" loading="lazy"><br>
+<img src="https://Ra7n.github.io/post-images/1669873092507.png" alt="" loading="lazy"></p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[thinkPHP5.0.0-5.0.18_RCE_分析]]></title>
+        <id>https://Ra7n.github.io/post/thinkphp500-5018-rce-analysis/</id>
+        <link href="https://Ra7n.github.io/post/thinkphp500-5018-rce-analysis/">
+        </link>
+        <updated>2022-12-01T04:01:04.000Z</updated>
+        <content type="html"><![CDATA[<h3 id="payload">payload:</h3>
+<p><code>POST提交数据 payload= s=whoami&amp;_method=__construct&amp;method=post&amp;filter[]=system</code></p>
+<h3 id="复现截图">复现截图:</h3>
+<p><img src="https://Ra7n.github.io/post-images/1669867514661.png" alt="" loading="lazy">上图所示输出了两次whoami指令的执行结果,可以看出漏洞触发了两次<br>
+<br/></p>
+<h3 id="触发链">触发链:</h3>
+<figure data-type="image" tabindex="1"><img src="https://Ra7n.github.io/post-images/1669867598203.png" alt="" loading="lazy"></figure>
+<h4 id="详细过程">详细过程:</h4>
+<p><em>分析利用链</em></p>
+<h5 id="0x01">0x01</h5>
+<p>入口文件包含了/thinkphp/start.php文件<br>
+<img src="https://Ra7n.github.io/post-images/1669867915874.png" alt="" loading="lazy"></p>
+<h5 id="0x02实例属性覆盖">0x02(实例属性覆盖)</h5>
+<p>调用run()方法执行应用<br>
+<img src="https://Ra7n.github.io/post-images/1669867922880.png" alt="" loading="lazy"></p>
+<p>判断$request变量是否为空,为空则获取一个Request类的实例<br>
+<img src="https://Ra7n.github.io/post-images/1669867928956.png" alt="" loading="lazy"></p>
+<p>向下走执行routeCheck()方法(此方法用于检测获取路由信息),并且传递先前创建的Request实例</p>
+<figure data-type="image" tabindex="2"><img src="https://Ra7n.github.io/post-images/1669867934904.png" alt="" loading="lazy"></figure>
+<p>routeCheck()方法中调用了route方法<br>
+<img src="https://Ra7n.github.io/post-images/1669868130403.png" alt="" loading="lazy"></p>
+<p>跟进check方法,紧接着调用了method,这里是产生漏洞的关键。<br>
+<img src="https://Ra7n.github.io/post-images/1669868140576.png" alt="" loading="lazy"></p>
+<p>跟进method方法<br>
+<img src="https://Ra7n.github.io/post-images/1669868145363.png" alt="" loading="lazy"></p>
+<p>get方法用于获取配置文件中配置项的值</p>
+<p>按照优先级先获取了配置文件中var_method配置项的值,而恰巧该配置项的值为<code>__method</code><br>
+<img src="https://Ra7n.github.io/post-images/1669868151568.png" alt="" loading="lazy"></p>
+<p>该分支首先判断<span class='katex-error' title='ParseError: KaTeX parse error: Expected group after &#039;_&#039; at position 33: …ost参数集合)中是否设置了*_̲_method*参数,设置了则…'>_POST系统变量(也就是传递的post参数集合)中是否设置了*__method*参数,设置了则继续往下走。紧接着通过将</span>_POST变量中的<code>__method</code>值获取过来并且通过strtoupper()函数转为大写的字符串形式,这里并不重要,重要的在最后一行,利用了php可变函数的机制调用方法这里先是获取当前对象的method属性,而method属性是可控的!!!,表示我们现在可以任意调用当前对象的任意方法。更糟糕的是传递进该方法的参数是<code>$__POST</code>同样是可控的。所以payload中传递的<code>__method=__construct</code>参数的作用正是要调用当前对象的__construct方法。<br>
+<img src="https://Ra7n.github.io/post-images/1669868500893.png" alt="" loading="lazy"></p>
+<p>跟进__construct()方法,这里使用了foreach循环将传递进此方法的参数进行遍历。已知传递进此函数的参数是<code>POST</code>变量,所以此时的形参<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>o</mi><mi>p</mi><mi>t</mi><mi>i</mi><mi>o</mi><mi>n</mi><mi>s</mi><mi mathvariant="normal">就</mi><mi mathvariant="normal">是</mi><mi mathvariant="normal">‘</mi><mi>P</mi><mi>O</mi><mi>S</mi><mi>T</mi><mi mathvariant="normal">‘</mi><mi mathvariant="normal">变</mi><mi mathvariant="normal">量</mi><mi mathvariant="normal">。</mi><mi mathvariant="normal">该</mi><mi mathvariant="normal">方</mi><mi mathvariant="normal">法</mi><mi mathvariant="normal">中</mi><mi mathvariant="normal">遍</mi><mi mathvariant="normal">历</mi><mi mathvariant="normal">了</mi></mrow><annotation encoding="application/x-tex">options就是`POST`变量。该方法中遍历了</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord mathdefault">o</span><span class="mord mathdefault">p</span><span class="mord mathdefault">t</span><span class="mord mathdefault">i</span><span class="mord mathdefault">o</span><span class="mord mathdefault">n</span><span class="mord mathdefault">s</span><span class="mord cjk_fallback">就</span><span class="mord cjk_fallback">是</span><span class="mord">‘</span><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="mord mathdefault" style="margin-right:0.02778em;">O</span><span class="mord mathdefault" style="margin-right:0.05764em;">S</span><span class="mord mathdefault" style="margin-right:0.13889em;">T</span><span class="mord">‘</span><span class="mord cjk_fallback">变</span><span class="mord cjk_fallback">量</span><span class="mord cjk_fallback">。</span><span class="mord cjk_fallback">该</span><span class="mord cjk_fallback">方</span><span class="mord cjk_fallback">法</span><span class="mord cjk_fallback">中</span><span class="mord cjk_fallback">遍</span><span class="mord cjk_fallback">历</span><span class="mord cjk_fallback">了</span></span></span></span>options变量,依次判断变量中的键名<code>($name)</code>是否为当前对象的属性,如果是则将$options中对应的&quot;值&quot;覆盖掉原实例属性。在__construct()方法中实现了实例变量的覆盖,这是导致漏洞的重要因素。</p>
+<figure data-type="image" tabindex="3"><img src="https://Ra7n.github.io/post-images/1669868509144.png" alt="" loading="lazy"></figure>
+<h5 id="第一次触发">第一次触发:</h5>
+<h6 id="0x03调用parse方法">0x03(调用parse方法)</h6>
+<p>$request变量中的属性可以被覆盖,回到之前的run方法<br>
+<img src="https://Ra7n.github.io/post-images/1669868514885.png" alt="" loading="lazy"></p>
+<p>跟进parse()方法,进入switch循环的POST分支中调用了当前实例的post方法。<br>
+<img src="https://Ra7n.github.io/post-images/1669868520115.png" alt="" loading="lazy"></p>
+<p>该方法的内容如下,先是将$_POST赋值给实例属性post。最后一行调用了input方法,将类属性post传递进了此方法<br>
+<img src="https://Ra7n.github.io/post-images/1669868525777.png" alt="" loading="lazy"></p>
+<p>进入input()方法,988行判断局部变量<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>f</mi><mi>i</mi><mi>l</mi><mi>t</mi><mi>e</mi><mi>r</mi><mi mathvariant="normal">是</mi><mi mathvariant="normal">否</mi><mi mathvariant="normal">为</mi><mi>n</mi><mi>u</mi><mi>l</mi><mi>l</mi><mo separator="true">,</mo><mi mathvariant="normal">这</mi><mi mathvariant="normal">里</mi><mi mathvariant="normal">为</mi><mi mathvariant="normal">空</mi><mi mathvariant="normal">串</mi><mi mathvariant="normal">不</mi><mi mathvariant="normal">为</mi><mi>n</mi><mi>u</mi><mi>l</mi><mi>l</mi><mo separator="true">,</mo><mi mathvariant="normal">进</mi><mi mathvariant="normal">入</mi><mi>e</mi><mi>l</mi><mi>s</mi><mi>e</mi><mi mathvariant="normal">分</mi><mi mathvariant="normal">支</mi><mo separator="true">,</mo><mi mathvariant="normal">该</mi><mi mathvariant="normal">分</mi><mi mathvariant="normal">支</mi><mi mathvariant="normal">将</mi><mi mathvariant="normal">实</mi><mi mathvariant="normal">例</mi><mi mathvariant="normal">属</mi><mi mathvariant="normal">性</mi><mi>f</mi><mi>i</mi><mi>l</mi><mi>t</mi><mi>e</mi><mi>r</mi><mi mathvariant="normal">赋</mi><mi mathvariant="normal">值</mi><mi mathvariant="normal">给</mi><mi mathvariant="normal">了</mi><mi mathvariant="normal">局</mi><mi mathvariant="normal">部</mi><mi mathvariant="normal">变</mi><mi mathvariant="normal">量</mi></mrow><annotation encoding="application/x-tex">filter是否为null,这里为空串不为null,进入else分支,该分支将实例属性filter赋值给了局部变量</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord mathdefault" style="margin-right:0.10764em;">f</span><span class="mord mathdefault">i</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">t</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord cjk_fallback">是</span><span class="mord cjk_fallback">否</span><span class="mord cjk_fallback">为</span><span class="mord mathdefault">n</span><span class="mord mathdefault">u</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">这</span><span class="mord cjk_fallback">里</span><span class="mord cjk_fallback">为</span><span class="mord cjk_fallback">空</span><span class="mord cjk_fallback">串</span><span class="mord cjk_fallback">不</span><span class="mord cjk_fallback">为</span><span class="mord mathdefault">n</span><span class="mord mathdefault">u</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">进</span><span class="mord cjk_fallback">入</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">s</span><span class="mord mathdefault">e</span><span class="mord cjk_fallback">分</span><span class="mord cjk_fallback">支</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">该</span><span class="mord cjk_fallback">分</span><span class="mord cjk_fallback">支</span><span class="mord cjk_fallback">将</span><span class="mord cjk_fallback">实</span><span class="mord cjk_fallback">例</span><span class="mord cjk_fallback">属</span><span class="mord cjk_fallback">性</span><span class="mord mathdefault" style="margin-right:0.10764em;">f</span><span class="mord mathdefault">i</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">t</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord cjk_fallback">赋</span><span class="mord cjk_fallback">值</span><span class="mord cjk_fallback">给</span><span class="mord cjk_fallback">了</span><span class="mord cjk_fallback">局</span><span class="mord cjk_fallback">部</span><span class="mord cjk_fallback">变</span><span class="mord cjk_fallback">量</span></span></span></span>filter<br>
+<img src="https://Ra7n.github.io/post-images/1669868530729.png" alt="" loading="lazy"></p>
+<p>继续向下999行判断$data是否为数组,此处为true进入了图中所示分支<br>
+<img src="https://Ra7n.github.io/post-images/1669868595408.png" alt="" loading="lazy"></p>
+<figure data-type="image" tabindex="4"><img src="https://Ra7n.github.io/post-images/1669868603462.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="5"><img src="https://Ra7n.github.io/post-images/1669868610290.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="6"><img src="https://Ra7n.github.io/post-images/1669868731065.png" alt="" loading="lazy"></figure>
+<p>一句话就是这里调用了实例的filterValue方法,并且将$data数组中的元素依次传入到参数二的回调函数中进行调用,第三个参数默认也会被传递到回调函数中作为filterValue方法的第三个参数</p>
+<figure data-type="image" tabindex="7"><img src="https://Ra7n.github.io/post-images/1669868622447.png" alt="" loading="lazy"></figure>
+<h5 id="第二次触发">第二次触发:</h5>
+<h6 id="触发链-2">触发链:</h6>
+<p><code>run() ----&gt; module() -----&gt;invokeMethod() ----&gt; bindParams() ----&gt; param() ----&gt; this-&gt;post() -----&gt; this-&gt;input() ----&gt; this-&gt;filterValue()</code></p>
+<p>在分发请求dispath['type']类型为module时触发</p>
+<p>过程与第一次触发漏洞一致,都是利用了input方法。就不贴过程了。</p>
+<p>实例属性覆盖引发的命令执行</p>
+]]></content>
+    </entry>
+</feed>

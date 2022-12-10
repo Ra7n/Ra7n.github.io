@@ -1,0 +1,237 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    
+<meta charset="utf-8" >
+
+<title>Vegeta-[ShellcodeLoader]-自研 | Ra7n&#39;s Blog</title>
+<meta name="description" content="为国之安全奋斗 为信息安全发声">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.0/animate.min.css">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://Ra7n.github.io/favicon.ico?v=1670661199989">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://Ra7n.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+      <div class="site-header-container">
+  <div class="site-header">
+    <div class="left">
+      <a href="https://Ra7n.github.io">
+        <img class="avatar" src="https://Ra7n.github.io/images/avatar.png?v=1670661199989" alt="" width="32px" height="32px">
+      </a>
+      <a href="https://Ra7n.github.io">
+        <h1 class="site-title">Ra7n&#39;s Blog</h1>
+      </a>
+    </div>
+    <div class="right">
+      <transition name="fade">
+        <i class="icon" :class="{ 'icon-close-outline': menuVisible, 'icon-menu-outline': !menuVisible }" @click="menuVisible = !menuVisible"></i>
+      </transition>
+    </div>
+  </div>
+</div>
+
+<transition name="fade">
+  <div class="menu-container" style="display: none;" v-show="menuVisible">
+    <div class="menu-list">
+      
+        
+          <a href="/" class="menu purple-link">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="menu purple-link">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="menu purple-link">
+            标签
+          </a>
+        
+      
+        
+          <a href="https://ra7n.github.io/post/about" class="menu purple-link">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+</transition>
+
+
+      <div class="content-container">
+        <div class="post-detail">
+          
+            <div class="feature-container" style="background-image: url('https://Ra7n.github.io/post-images/vegeta-shellcodeloder.jpg')">
+            </div>
+          
+          <h2 class="post-title">Vegeta-[ShellcodeLoader]-自研</h2>
+          <div class="post-info post-detail-info">
+            <span><i class="icon-calendar-outline"></i> 2022-12-01</span>
+            
+              <span>
+                <i class="icon-pricetags-outline"></i>
+                
+                  <a href="https://Ra7n.github.io/tag/REiHcj2s3/">
+                    免杀
+                    
+                      ，
+                    
+                  </a>
+                
+                  <a href="https://Ra7n.github.io/tag/8j_hDJ8SVr/">
+                    shellcode加载器
+                    
+                  </a>
+                
+              </span>
+            
+          </div>
+          <div class="post-content" v-pre>
+            <h2 id="vegetav10">Vegeta(v1.0)</h2>
+<pre><code> _    __                __       
+| |  / /__  ____ ____  / /_____ _
+| | / / _ \/ __ '/ _ \/ __/ __ '/
+| |/ /  __/ /_/ /  __/ /_/ /_/ / 
+|___/\___/\__, /\___/\__/\__,_/  
+         /____/   
+         	 -----Vegeta-ShellCode加载器
+			-----基于Go语言,腾讯云COS存储桶
+</code></pre>
+<h3 id="目录结构">目录结构:</h3>
+<pre><code>Vegeta
+	-Options
+		存放配置文件
+	-output
+		基于final.go文件生成木马
+	-Raw
+		存放Metasploit,CobaltStrike,Havoc等C2生成的Raw格式ShellCode
+	-Source
+		程序的实现,加载方式,加密方式,以及对存储桶的操作方法
+</code></pre>
+<h3 id="使用">使用:</h3>
+<h4 id="编译运行">编译&amp;运行:</h4>
+<pre><code>1.go build Vegeta.go //生成二进制文件
+2.go run Vegeta.go //直接运行
+</code></pre>
+<h4 id="配置文件">配置文件:</h4>
+<pre><code>配置文件路径:./Options
+	-BucketInfo.json //存储桶信息
+		BUCKET : 存储桶地址
+		
+	-CreateBucket.json //新建存储桶时的配置信息
+		BUCKET_NAME : 存储桶名称
+		BUCKET_TYPE :  存储桶类型
+		REGION : 存储桶所在城市
+		
+	-UserInfo.json //腾讯云账号信息,shellcode相关信息
+		APPID : 腾讯云APPID
+		SECRETID :  腾讯云SECRETID
+		SECRETKEY : 腾讯云SECRETKEY
+		RAW_FILE_NAME : C2生成的Raw格式文件名
+		SLEEP_SECOND : 睡眠时间
+				加载器启动后对Shellcode进行解密加载的间隔时间,设置这个时间有助于逃避杀软对内存的扫描
+</code></pre>
+<h4 id="参数">参数:</h4>
+<pre><code>-t
+	1 //创建存储桶
+	需要配置./Options/CreateBucket.json文件
+	
+	2 //生成马子
+	需要配置./Options/BucketInfo.json,./Options/UserInfo.json文件
+</code></pre>
+<br/>
+<h3 id="bypass">Bypass</h3>
+<ul>
+<li>3**</li>
+<li>huo****</li>
+<li>W*</li>
+</ul>
+<p>VT：6/72<br/><br/></p>
+<h3 id="注意">注意:</h3>
+<p>​	特别鸣谢Tide安全团队提供的Go语言加密包</p>
+<p>​	https://github.com/TideSec/GoBypassAV/tree/main/Encryption/XOR_code<br>
+<br/></p>
+<p><strong>此项目,暂时没有发布在Github<br/>有时间会在B站讲一下具体实现</strong><br>
+<img src="https://Ra7n.github.io/post-images/1669899410406.png" alt="" loading="lazy"></p>
+
+          </div>
+        </div>
+
+        
+          <div class="next-post">
+            <a class="purple-link" href="https://Ra7n.github.io/post/74cms-SSTI-analysis/">
+              <h3 class="post-title">
+                下一篇：74CMS模板注入漏洞分析
+              </h3>
+            </a>
+          </div>
+          
+      </div>
+
+      
+
+      <div class="site-footer">
+  <div class="slogan">为国之安全奋斗 为信息安全发声</div>
+  <div class="social-container">
+    
+      
+        <a href="https://github.com/Ra7n" target="_blank">
+          <i class="fab fa-github"></i>
+        </a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+  <b>文章仅供学习参考,严禁用于非法测试!!!,产生一切后果自行承担<b/>
+<br/>
+Copyrights © 2022 | Ra7n
+<br/>
+Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://Ra7n.github.io/atom.xml" target="_blank">RSS</a>
+</div>
+
+
+    </div>
+    <script type="application/javascript">
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

@@ -1,0 +1,218 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    
+<meta charset="utf-8" >
+
+<title>thinkPHP5.0.0-5.0.18_RCE_分析 | Ra7n&#39;s Blog</title>
+<meta name="description" content="为国之安全奋斗 为信息安全发声">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.0/animate.min.css">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://Ra7n.github.io/favicon.ico?v=1670661199989">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://Ra7n.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+      <div class="site-header-container">
+  <div class="site-header">
+    <div class="left">
+      <a href="https://Ra7n.github.io">
+        <img class="avatar" src="https://Ra7n.github.io/images/avatar.png?v=1670661199989" alt="" width="32px" height="32px">
+      </a>
+      <a href="https://Ra7n.github.io">
+        <h1 class="site-title">Ra7n&#39;s Blog</h1>
+      </a>
+    </div>
+    <div class="right">
+      <transition name="fade">
+        <i class="icon" :class="{ 'icon-close-outline': menuVisible, 'icon-menu-outline': !menuVisible }" @click="menuVisible = !menuVisible"></i>
+      </transition>
+    </div>
+  </div>
+</div>
+
+<transition name="fade">
+  <div class="menu-container" style="display: none;" v-show="menuVisible">
+    <div class="menu-list">
+      
+        
+          <a href="/" class="menu purple-link">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="menu purple-link">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="menu purple-link">
+            标签
+          </a>
+        
+      
+        
+          <a href="https://ra7n.github.io/post/about" class="menu purple-link">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+</transition>
+
+
+      <div class="content-container">
+        <div class="post-detail">
+          
+            <div class="feature-container" style="background-image: url('https://Ra7n.github.io/post-images/thinkphp500-5018-rce-analysis.jpg')">
+            </div>
+          
+          <h2 class="post-title">thinkPHP5.0.0-5.0.18_RCE_分析</h2>
+          <div class="post-info post-detail-info">
+            <span><i class="icon-calendar-outline"></i> 2022-12-01</span>
+            
+              <span>
+                <i class="icon-pricetags-outline"></i>
+                
+                  <a href="https://Ra7n.github.io/tag/FECu-RSPM/">
+                    代码审计
+                    
+                      ，
+                    
+                  </a>
+                
+                  <a href="https://Ra7n.github.io/tag/4CshrwI4p0/">
+                    thinkphp
+                    
+                  </a>
+                
+              </span>
+            
+          </div>
+          <div class="post-content" v-pre>
+            <h3 id="payload">payload:</h3>
+<p><code>POST提交数据 payload= s=whoami&amp;_method=__construct&amp;method=post&amp;filter[]=system</code></p>
+<h3 id="复现截图">复现截图:</h3>
+<p><img src="https://Ra7n.github.io/post-images/1669867514661.png" alt="" loading="lazy">上图所示输出了两次whoami指令的执行结果,可以看出漏洞触发了两次<br>
+<br/></p>
+<h3 id="触发链">触发链:</h3>
+<figure data-type="image" tabindex="1"><img src="https://Ra7n.github.io/post-images/1669867598203.png" alt="" loading="lazy"></figure>
+<h4 id="详细过程">详细过程:</h4>
+<p><em>分析利用链</em></p>
+<h5 id="0x01">0x01</h5>
+<p>入口文件包含了/thinkphp/start.php文件<br>
+<img src="https://Ra7n.github.io/post-images/1669867915874.png" alt="" loading="lazy"></p>
+<h5 id="0x02实例属性覆盖">0x02(实例属性覆盖)</h5>
+<p>调用run()方法执行应用<br>
+<img src="https://Ra7n.github.io/post-images/1669867922880.png" alt="" loading="lazy"></p>
+<p>判断$request变量是否为空,为空则获取一个Request类的实例<br>
+<img src="https://Ra7n.github.io/post-images/1669867928956.png" alt="" loading="lazy"></p>
+<p>向下走执行routeCheck()方法(此方法用于检测获取路由信息),并且传递先前创建的Request实例</p>
+<figure data-type="image" tabindex="2"><img src="https://Ra7n.github.io/post-images/1669867934904.png" alt="" loading="lazy"></figure>
+<p>routeCheck()方法中调用了route方法<br>
+<img src="https://Ra7n.github.io/post-images/1669868130403.png" alt="" loading="lazy"></p>
+<p>跟进check方法,紧接着调用了method,这里是产生漏洞的关键。<br>
+<img src="https://Ra7n.github.io/post-images/1669868140576.png" alt="" loading="lazy"></p>
+<p>跟进method方法<br>
+<img src="https://Ra7n.github.io/post-images/1669868145363.png" alt="" loading="lazy"></p>
+<p>get方法用于获取配置文件中配置项的值</p>
+<p>按照优先级先获取了配置文件中var_method配置项的值,而恰巧该配置项的值为<code>__method</code><br>
+<img src="https://Ra7n.github.io/post-images/1669868151568.png" alt="" loading="lazy"></p>
+<p>该分支首先判断<span class='katex-error' title='ParseError: KaTeX parse error: Expected group after &#039;_&#039; at position 33: …ost参数集合)中是否设置了*_̲_method*参数,设置了则…'>_POST系统变量(也就是传递的post参数集合)中是否设置了*__method*参数,设置了则继续往下走。紧接着通过将</span>_POST变量中的<code>__method</code>值获取过来并且通过strtoupper()函数转为大写的字符串形式,这里并不重要,重要的在最后一行,利用了php可变函数的机制调用方法这里先是获取当前对象的method属性,而method属性是可控的!!!,表示我们现在可以任意调用当前对象的任意方法。更糟糕的是传递进该方法的参数是<code>$__POST</code>同样是可控的。所以payload中传递的<code>__method=__construct</code>参数的作用正是要调用当前对象的__construct方法。<br>
+<img src="https://Ra7n.github.io/post-images/1669868500893.png" alt="" loading="lazy"></p>
+<p>跟进__construct()方法,这里使用了foreach循环将传递进此方法的参数进行遍历。已知传递进此函数的参数是<code>POST</code>变量,所以此时的形参<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>o</mi><mi>p</mi><mi>t</mi><mi>i</mi><mi>o</mi><mi>n</mi><mi>s</mi><mi mathvariant="normal">就</mi><mi mathvariant="normal">是</mi><mi mathvariant="normal">‘</mi><mi>P</mi><mi>O</mi><mi>S</mi><mi>T</mi><mi mathvariant="normal">‘</mi><mi mathvariant="normal">变</mi><mi mathvariant="normal">量</mi><mi mathvariant="normal">。</mi><mi mathvariant="normal">该</mi><mi mathvariant="normal">方</mi><mi mathvariant="normal">法</mi><mi mathvariant="normal">中</mi><mi mathvariant="normal">遍</mi><mi mathvariant="normal">历</mi><mi mathvariant="normal">了</mi></mrow><annotation encoding="application/x-tex">options就是`POST`变量。该方法中遍历了</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord mathdefault">o</span><span class="mord mathdefault">p</span><span class="mord mathdefault">t</span><span class="mord mathdefault">i</span><span class="mord mathdefault">o</span><span class="mord mathdefault">n</span><span class="mord mathdefault">s</span><span class="mord cjk_fallback">就</span><span class="mord cjk_fallback">是</span><span class="mord">‘</span><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="mord mathdefault" style="margin-right:0.02778em;">O</span><span class="mord mathdefault" style="margin-right:0.05764em;">S</span><span class="mord mathdefault" style="margin-right:0.13889em;">T</span><span class="mord">‘</span><span class="mord cjk_fallback">变</span><span class="mord cjk_fallback">量</span><span class="mord cjk_fallback">。</span><span class="mord cjk_fallback">该</span><span class="mord cjk_fallback">方</span><span class="mord cjk_fallback">法</span><span class="mord cjk_fallback">中</span><span class="mord cjk_fallback">遍</span><span class="mord cjk_fallback">历</span><span class="mord cjk_fallback">了</span></span></span></span>options变量,依次判断变量中的键名<code>($name)</code>是否为当前对象的属性,如果是则将$options中对应的&quot;值&quot;覆盖掉原实例属性。在__construct()方法中实现了实例变量的覆盖,这是导致漏洞的重要因素。</p>
+<figure data-type="image" tabindex="3"><img src="https://Ra7n.github.io/post-images/1669868509144.png" alt="" loading="lazy"></figure>
+<h5 id="第一次触发">第一次触发:</h5>
+<h6 id="0x03调用parse方法">0x03(调用parse方法)</h6>
+<p>$request变量中的属性可以被覆盖,回到之前的run方法<br>
+<img src="https://Ra7n.github.io/post-images/1669868514885.png" alt="" loading="lazy"></p>
+<p>跟进parse()方法,进入switch循环的POST分支中调用了当前实例的post方法。<br>
+<img src="https://Ra7n.github.io/post-images/1669868520115.png" alt="" loading="lazy"></p>
+<p>该方法的内容如下,先是将$_POST赋值给实例属性post。最后一行调用了input方法,将类属性post传递进了此方法<br>
+<img src="https://Ra7n.github.io/post-images/1669868525777.png" alt="" loading="lazy"></p>
+<p>进入input()方法,988行判断局部变量<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>f</mi><mi>i</mi><mi>l</mi><mi>t</mi><mi>e</mi><mi>r</mi><mi mathvariant="normal">是</mi><mi mathvariant="normal">否</mi><mi mathvariant="normal">为</mi><mi>n</mi><mi>u</mi><mi>l</mi><mi>l</mi><mo separator="true">,</mo><mi mathvariant="normal">这</mi><mi mathvariant="normal">里</mi><mi mathvariant="normal">为</mi><mi mathvariant="normal">空</mi><mi mathvariant="normal">串</mi><mi mathvariant="normal">不</mi><mi mathvariant="normal">为</mi><mi>n</mi><mi>u</mi><mi>l</mi><mi>l</mi><mo separator="true">,</mo><mi mathvariant="normal">进</mi><mi mathvariant="normal">入</mi><mi>e</mi><mi>l</mi><mi>s</mi><mi>e</mi><mi mathvariant="normal">分</mi><mi mathvariant="normal">支</mi><mo separator="true">,</mo><mi mathvariant="normal">该</mi><mi mathvariant="normal">分</mi><mi mathvariant="normal">支</mi><mi mathvariant="normal">将</mi><mi mathvariant="normal">实</mi><mi mathvariant="normal">例</mi><mi mathvariant="normal">属</mi><mi mathvariant="normal">性</mi><mi>f</mi><mi>i</mi><mi>l</mi><mi>t</mi><mi>e</mi><mi>r</mi><mi mathvariant="normal">赋</mi><mi mathvariant="normal">值</mi><mi mathvariant="normal">给</mi><mi mathvariant="normal">了</mi><mi mathvariant="normal">局</mi><mi mathvariant="normal">部</mi><mi mathvariant="normal">变</mi><mi mathvariant="normal">量</mi></mrow><annotation encoding="application/x-tex">filter是否为null,这里为空串不为null,进入else分支,该分支将实例属性filter赋值给了局部变量</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord mathdefault" style="margin-right:0.10764em;">f</span><span class="mord mathdefault">i</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">t</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord cjk_fallback">是</span><span class="mord cjk_fallback">否</span><span class="mord cjk_fallback">为</span><span class="mord mathdefault">n</span><span class="mord mathdefault">u</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">这</span><span class="mord cjk_fallback">里</span><span class="mord cjk_fallback">为</span><span class="mord cjk_fallback">空</span><span class="mord cjk_fallback">串</span><span class="mord cjk_fallback">不</span><span class="mord cjk_fallback">为</span><span class="mord mathdefault">n</span><span class="mord mathdefault">u</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">进</span><span class="mord cjk_fallback">入</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">s</span><span class="mord mathdefault">e</span><span class="mord cjk_fallback">分</span><span class="mord cjk_fallback">支</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">该</span><span class="mord cjk_fallback">分</span><span class="mord cjk_fallback">支</span><span class="mord cjk_fallback">将</span><span class="mord cjk_fallback">实</span><span class="mord cjk_fallback">例</span><span class="mord cjk_fallback">属</span><span class="mord cjk_fallback">性</span><span class="mord mathdefault" style="margin-right:0.10764em;">f</span><span class="mord mathdefault">i</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">t</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord cjk_fallback">赋</span><span class="mord cjk_fallback">值</span><span class="mord cjk_fallback">给</span><span class="mord cjk_fallback">了</span><span class="mord cjk_fallback">局</span><span class="mord cjk_fallback">部</span><span class="mord cjk_fallback">变</span><span class="mord cjk_fallback">量</span></span></span></span>filter<br>
+<img src="https://Ra7n.github.io/post-images/1669868530729.png" alt="" loading="lazy"></p>
+<p>继续向下999行判断$data是否为数组,此处为true进入了图中所示分支<br>
+<img src="https://Ra7n.github.io/post-images/1669868595408.png" alt="" loading="lazy"></p>
+<figure data-type="image" tabindex="4"><img src="https://Ra7n.github.io/post-images/1669868603462.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="5"><img src="https://Ra7n.github.io/post-images/1669868610290.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="6"><img src="https://Ra7n.github.io/post-images/1669868731065.png" alt="" loading="lazy"></figure>
+<p>一句话就是这里调用了实例的filterValue方法,并且将$data数组中的元素依次传入到参数二的回调函数中进行调用,第三个参数默认也会被传递到回调函数中作为filterValue方法的第三个参数</p>
+<figure data-type="image" tabindex="7"><img src="https://Ra7n.github.io/post-images/1669868622447.png" alt="" loading="lazy"></figure>
+<h5 id="第二次触发">第二次触发:</h5>
+<h6 id="触发链-2">触发链:</h6>
+<p><code>run() ----&gt; module() -----&gt;invokeMethod() ----&gt; bindParams() ----&gt; param() ----&gt; this-&gt;post() -----&gt; this-&gt;input() ----&gt; this-&gt;filterValue()</code></p>
+<p>在分发请求dispath['type']类型为module时触发</p>
+<p>过程与第一次触发漏洞一致,都是利用了input方法。就不贴过程了。</p>
+<p>实例属性覆盖引发的命令执行</p>
+
+          </div>
+        </div>
+
+        
+      </div>
+
+      
+
+      <div class="site-footer">
+  <div class="slogan">为国之安全奋斗 为信息安全发声</div>
+  <div class="social-container">
+    
+      
+        <a href="https://github.com/Ra7n" target="_blank">
+          <i class="fab fa-github"></i>
+        </a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+  <b>文章仅供学习参考,严禁用于非法测试!!!,产生一切后果自行承担<b/>
+<br/>
+Copyrights © 2022 | Ra7n
+<br/>
+Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://Ra7n.github.io/atom.xml" target="_blank">RSS</a>
+</div>
+
+
+    </div>
+    <script type="application/javascript">
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

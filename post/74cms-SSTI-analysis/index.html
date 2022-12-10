@@ -1,0 +1,191 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    
+<meta charset="utf-8" >
+
+<title>74CMS模板注入漏洞分析 | Ra7n&#39;s Blog</title>
+<meta name="description" content="为国之安全奋斗 为信息安全发声">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.0/animate.min.css">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://Ra7n.github.io/favicon.ico?v=1670661199989">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://Ra7n.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+      <div class="site-header-container">
+  <div class="site-header">
+    <div class="left">
+      <a href="https://Ra7n.github.io">
+        <img class="avatar" src="https://Ra7n.github.io/images/avatar.png?v=1670661199989" alt="" width="32px" height="32px">
+      </a>
+      <a href="https://Ra7n.github.io">
+        <h1 class="site-title">Ra7n&#39;s Blog</h1>
+      </a>
+    </div>
+    <div class="right">
+      <transition name="fade">
+        <i class="icon" :class="{ 'icon-close-outline': menuVisible, 'icon-menu-outline': !menuVisible }" @click="menuVisible = !menuVisible"></i>
+      </transition>
+    </div>
+  </div>
+</div>
+
+<transition name="fade">
+  <div class="menu-container" style="display: none;" v-show="menuVisible">
+    <div class="menu-list">
+      
+        
+          <a href="/" class="menu purple-link">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="menu purple-link">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="menu purple-link">
+            标签
+          </a>
+        
+      
+        
+          <a href="https://ra7n.github.io/post/about" class="menu purple-link">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+</transition>
+
+
+      <div class="content-container">
+        <div class="post-detail">
+          
+            <div class="feature-container" style="background-image: url('https://Ra7n.github.io/post-images/74cms-SSTI-analysis.jpg')">
+            </div>
+          
+          <h2 class="post-title">74CMS模板注入漏洞分析</h2>
+          <div class="post-info post-detail-info">
+            <span><i class="icon-calendar-outline"></i> 2022-12-01</span>
+            
+              <span>
+                <i class="icon-pricetags-outline"></i>
+                
+                  <a href="https://Ra7n.github.io/tag/s6VrLY8I9/">
+                    cms
+                    
+                      ，
+                    
+                  </a>
+                
+                  <a href="https://Ra7n.github.io/tag/FECu-RSPM/">
+                    代码审计
+                    
+                  </a>
+                
+              </span>
+            
+          </div>
+          <div class="post-content" v-pre>
+            <p><img src="https://Ra7n.github.io/post-images/1669875630028.png" alt="" loading="lazy">### 入口文件:</p>
+<p>惯例,先来看一下入口文件</p>
+<p>这个cms是基于thinkPHP3.2.3进行开发的入口文件流程如下图所示</p>
+<p>就不展开讲了<br>
+<img src="https://Ra7n.github.io/post-images/1669873064904.png" alt="" loading="lazy"></p>
+<h3 id="漏洞触发链">漏洞触发链:</h3>
+<p>出现在config控制器的edit()函数中,该函数中调用了\Application\Common\Controller\BackendController.class.php下的update_config()函数将可控变量数组转换为字符串形式写入到Conf/url.php文件中从而触发漏洞。</p>
+<figure data-type="image" tabindex="1"><img src="https://Ra7n.github.io/post-images/1669873069189.png" alt="" loading="lazy"></figure>
+<p>代码形式的具体流程入下图所示:</p>
+<figure data-type="image" tabindex="2"><img src="https://Ra7n.github.io/post-images/1669873074086.png" alt="" loading="lazy"></figure>
+<h4 id="处理site_name参数">处理site_name参数</h4>
+<p>    进入edit()方法首先会调用方法I()获取site_domain参数的值,向下会对参数值进行处理,例如去除http/s协议前缀,最终将处理后的结果以&quot;.&quot;符号进行分割,转换为数组,再用array_slice()函数,切割分割字符串后生成的数组,取数组中后两个值生成新数组,也就是array(' ',phpinfo().'/ ','com')数组的最终形式。最后调用implode()函数以'.'符号作为连接符号拼接数组中的各元素,形成最终的payload: <strong>.',phpinfo(),'/.com</strong>*,payload会赋值给$config的两个不同键。</p>
+<h6 id="payload的变化过程详细">payload的变化过程(详细):</h6>
+<figure data-type="image" tabindex="3"><img src="https://Ra7n.github.io/post-images/1669873079157.png" alt="" loading="lazy"></figure>
+<h4 id="写入confurlphp文件">写入/Conf/url.php文件:</h4>
+<p>到了最关键的点,<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>c</mi><mi>o</mi><mi>n</mi><mi>f</mi><mi>i</mi><mi>g</mi><mi mathvariant="normal">数</mi><mi mathvariant="normal">组</mi><mi mathvariant="normal">被</mi><mi mathvariant="normal">传</mi><mi mathvariant="normal">递</mi><mi mathvariant="normal">到</mi><mi>u</mi><mi>p</mi><mi>d</mi><mi>a</mi><mi>t</mi><msub><mi>e</mi><mi>c</mi></msub><mi>o</mi><mi>n</mi><mi>f</mi><mi>i</mi><mi>g</mi><mo>(</mo><mo>)</mo><mi mathvariant="normal">函</mi><mi mathvariant="normal">数</mi><mi mathvariant="normal">中</mi><mo separator="true">,</mo><mi mathvariant="normal">该</mi><mi mathvariant="normal">函</mi><mi mathvariant="normal">数</mi><mi mathvariant="normal">需</mi><mi mathvariant="normal">传</mi><mi mathvariant="normal">递</mi><mi mathvariant="normal">两</mi><mi mathvariant="normal">个</mi><mi mathvariant="normal">参</mi><mi mathvariant="normal">数</mi><mo separator="true">,</mo><mi mathvariant="normal">第</mi><mi mathvariant="normal">一</mi><mi mathvariant="normal">个</mi><mi mathvariant="normal">参</mi><mi mathvariant="normal">数</mi><mi mathvariant="normal">传</mi><mi mathvariant="normal">递</mi><mi mathvariant="normal">的</mi><mi mathvariant="normal">是</mi></mrow><annotation encoding="application/x-tex">config数组被传递到update_config()函数中,该函数需传递两个参数,第一个参数传递的是</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">c</span><span class="mord mathdefault">o</span><span class="mord mathdefault">n</span><span class="mord mathdefault" style="margin-right:0.10764em;">f</span><span class="mord mathdefault">i</span><span class="mord mathdefault" style="margin-right:0.03588em;">g</span><span class="mord cjk_fallback">数</span><span class="mord cjk_fallback">组</span><span class="mord cjk_fallback">被</span><span class="mord cjk_fallback">传</span><span class="mord cjk_fallback">递</span><span class="mord cjk_fallback">到</span><span class="mord mathdefault">u</span><span class="mord mathdefault">p</span><span class="mord mathdefault">d</span><span class="mord mathdefault">a</span><span class="mord mathdefault">t</span><span class="mord"><span class="mord mathdefault">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">c</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord mathdefault">o</span><span class="mord mathdefault">n</span><span class="mord mathdefault" style="margin-right:0.10764em;">f</span><span class="mord mathdefault">i</span><span class="mord mathdefault" style="margin-right:0.03588em;">g</span><span class="mopen">(</span><span class="mclose">)</span><span class="mord cjk_fallback">函</span><span class="mord cjk_fallback">数</span><span class="mord cjk_fallback">中</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">该</span><span class="mord cjk_fallback">函</span><span class="mord cjk_fallback">数</span><span class="mord cjk_fallback">需</span><span class="mord cjk_fallback">传</span><span class="mord cjk_fallback">递</span><span class="mord cjk_fallback">两</span><span class="mord cjk_fallback">个</span><span class="mord cjk_fallback">参</span><span class="mord cjk_fallback">数</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">第</span><span class="mord cjk_fallback">一</span><span class="mord cjk_fallback">个</span><span class="mord cjk_fallback">参</span><span class="mord cjk_fallback">数</span><span class="mord cjk_fallback">传</span><span class="mord cjk_fallback">递</span><span class="mord cjk_fallback">的</span><span class="mord cjk_fallback">是</span></span></span></span>config数组,第二个参数是写死的固定的路径+配置文件名(/Conf/url.php),该函数将传递进来的第一个参数转换为其字符串的表示形式,再将其写入到第二个参数的文件之中。因为被转换的数组中的键值是可控的,再精心的构造payloda使payload逃逸出字符串中,从而达到了模板注入恶意代码的目的。</p>
+<figure data-type="image" tabindex="4"><img src="https://Ra7n.github.io/post-images/1669873083501.png" alt="" loading="lazy"></figure>
+<p>很多人觉得payload很奇怪,为什么会有.',之类的特殊符号,其实这些符号就是为了使php代码逃逸出字符串,使其成为独立存在的代码。,此配置文件在初始化cms时会自动加载,所以在注入成功后无论访问任何页面,看到的都是phpinfo()的信息</p>
+<p><img src="https://Ra7n.github.io/post-images/1669873087783.png" alt="" loading="lazy"><br>
+<img src="https://Ra7n.github.io/post-images/1669873092507.png" alt="" loading="lazy"></p>
+
+          </div>
+        </div>
+
+        
+          <div class="next-post">
+            <a class="purple-link" href="https://Ra7n.github.io/post/thinkphp500-5018-rce-analysis/">
+              <h3 class="post-title">
+                下一篇：thinkPHP5.0.0-5.0.18_RCE_分析
+              </h3>
+            </a>
+          </div>
+          
+      </div>
+
+      
+
+      <div class="site-footer">
+  <div class="slogan">为国之安全奋斗 为信息安全发声</div>
+  <div class="social-container">
+    
+      
+        <a href="https://github.com/Ra7n" target="_blank">
+          <i class="fab fa-github"></i>
+        </a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+  <b>文章仅供学习参考,严禁用于非法测试!!!,产生一切后果自行承担<b/>
+<br/>
+Copyrights © 2022 | Ra7n
+<br/>
+Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://Ra7n.github.io/atom.xml" target="_blank">RSS</a>
+</div>
+
+
+    </div>
+    <script type="application/javascript">
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>
